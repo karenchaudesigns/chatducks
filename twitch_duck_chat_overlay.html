@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Duck Overlay</title>
+    
+    <style>
+        /* === BASE & RESET === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            /* Transparent background is crucial for OBS Browser Sources */
+            background-color: transparent; 
+            overflow: hidden; /* Hide scrollbars */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 100vw;
+            height: 100vh;
+            color: white;
+        }
+
+        /* === SETUP OVERLAY === */
+        /* This is hidden when connected or accessed via OBS */
+        #setup-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9); /* Dark slate background */
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .setup-card {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+        }
+
+        .setup-card h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #f8fafc;
+        }
+
+        .setup-card p {
+            color: #94a3b8;
+            margin-bottom: 25px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px 0 0 8px;
+            background: #0f172a;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            box-shadow: inset 0 0 0 2px #3b82f6;
+        }
+
+        .input-group button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            background: #3b82f6;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+
+        .input-group button:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #475569;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background: #334155;
+        }
+
+        .obs-tip {
+            margin-top: 25px;
+            font-size: 12px;
+            color: #64748b;
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .obs-tip code {
+            color: #fbbf24;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        #status-msg {
+            color: #34d399;
+            font-weight: bold;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* === DUCK POND (OVERLAY SCENE) === */
+        #pond {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 20px 40px;
+            display: flex;
+            flex-wrap: wrap-reverse; /* Stack ducks from bottom up */
+            justify-content: center;
+            align-content: flex-start;
+            align-items: flex-end;
+            gap: 20px;
+            pointer-events: none; /* Let clicks pass through if used over other elements */
+        }
+
+        /* === DUCK STYLING === */
+        .duck-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Entrance Animation */
+            transform: scale(0);
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        .duck-wrapper.leaving {
+            transform: scale(0) !important;
+            opacity: 0;
+        }
+
+        .duck-bob {
+            /* Continuous floating animation */
+            animation: float 2s infinite ease-in-out alternate;
+            transform-origin: bottom center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .duck-svg {
+            width: 80px;
+            height: 80px;
+            filter: drop-shadow(0px 8px 6px rgba(0,0,0,0.4));
+        }
+
+        .duck-name {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            color: white;
+            margin-top: -10px;
+            z-index: 2;
+            text-transform: lowercase;
+            letter-spacing: 0.5px;
+            /* Thick black outline for readability on stream */
+            -webkit-text-stroke: 1px black;
+            text-shadow: 
+                2px 2px 0 #000, 
+                -1px -1px 0 #000, 
+                1px -1px 0 #000, 
+                -1px 1px 0 #000, 
+                1px 1px 0 #000;
+        }
+
+        /* === SPEECH BUBBLES === */
+        .bubble-container {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .speech-bubble {
+            position: relative;
+            background: white;
+            color: #111827;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 700;
+            max-width: 200px;
+            word-wrap: break-word;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 3px solid #111827;
+            margin-bottom: 12px;
+            
+            /* Hidden by default, animated in */
+            opacity: 0;
+            transform: translateY(10px) scale(0.8);
+            transform-origin: bottom center;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .speech-bubble.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* The tail of the speech bubble (White fill) */
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px 8px 0;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+            display: block;
+            width: 0;
+            z-index: 2;
+        }
+
+        /* The outline of the tail (Black outline) */
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 11px 11px 0;
+            border-style: solid;
+            border-color: #111827 transparent transparent transparent;
+            display: block;
+            width: 0;
+            z-index: 1;
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(-2deg); }
+            100% { transform: translateY(-12px) rotate(2deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Setup Modal: Only visible manually, hidden via URL Params -->
+    <div id="setup-modal">
+        <div class="setup-card">
+            <h1>🦆 Duck Chat</h1>
+            <p>Enter your Twitch channel name to connect. Viewers who chat will spawn as ducks!</p>
+            
+            <div class="input-group">
+                <input type="text" id="channel-input" placeholder="e.g. ninja">
+                <button onclick="startConnection()">Connect</button>
+            </div>
+            
+            <button class="btn-secondary" onclick="spawnTestMessage()">🧪 Send Test Message</button>
+            
+            <div id="status-msg">Connecting...</div>
+
+            <div class="obs-tip">
+                <strong>OBS/Streamlabs Setup:</strong><br><br>
+                To skip this screen automatically, add your channel to the URL in your Browser Source settings:<br><br>
+                <code>https://your-url.com/index.html?channel=YOUR_NAME</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- The Pond: Where all ducks spawn -->
+    <div id="pond"></div>
+
+    <script>
+        /**
+         * CONFIGURATION
+         */
+        const INACTIVITY_LIMIT_MS = 60000 * 5; // 5 minutes. Ducks leave if silent this long.
+        const BUBBLE_DURATION_MS = 7000;       // 7 seconds. How long chat bubbles stay up.
+        
+        let client = null; // tmi.js client
+        const activeUsers = new Map(); // Stores { element, duckColor, inactivityTimer, bubbleTimer }
+        const pond = document.getElementById('pond');
+        const setupModal = document.getElementById('setup-modal');
+        const statusMsg = document.getElementById('status-msg');
+
+        /**
+         * DYNAMIC SCRIPT LOADER WITH FALLBACKS
+         */
+        const TMI_CDNS = [
+            'https://cdnjs.cloudflare.com/ajax/libs/tmi.js/1.8.5/tmi.min.js',
+            'https://cdn.jsdelivr.net/npm/tmi.js@1.8.5/dist/tmi.min.js',
+            'https://unpkg.com/tmi.js@1.8.5/dist/tmi.min.js'
+        ];
+
+        function loadTmi(callback, attempt = 0) {
+            if (typeof tmi !== 'undefined') {
+                callback();
+                return;
+            }
+            
+            if (attempt >= TMI_CDNS.length) {
+                statusMsg.style.display = 'block';
+                statusMsg.style.color = '#ef4444';
+                statusMsg.innerText = "Error: Blocked from loading Twitch library. Try disabling adblockers/privacy shields for this page.";
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = TMI_CDNS[attempt];
+            script.onload = callback;
+            script.onerror = () => {
+                console.warn(`Failed to load tmi.js from ${TMI_CDNS[attempt]}, trying fallback...`);
+                loadTmi(callback, attempt + 1);
+            };
+            document.head.appendChild(script);
+        }
+
+        /**
+         * INITIALIZATION & URL PARSING
+         */
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            const channelParam = params.get('channel');
+            
+            if (channelParam) {
+                // If loaded via OBS with a parameter, skip UI and connect instantly
+                setupModal.style.display = 'none';
+                loadTmi(() => connectToTwitch(channelParam));
+            }
+        };
+
+        function startConnection() {
+            const channel = document.getElementById('channel-input').value.trim();
+            if (!channel) return;
+            
+            statusMsg.style.display = 'block';
+            statusMsg.style.color = '#34d399';
+            statusMsg.innerText = `Loading libraries...`;
+            
+            loadTmi(() => {
+                statusMsg.innerText = `Connecting to #${channel}...`;
+                connectToTwitch(channel);
+            });
+        }
+
+        /**
+         * TWITCH CONNECTION LOGIC
+         */
+        function connectToTwitch(channel) {
+            // Remove the # if they added it
+            channel = channel.replace('#', '');
+
+            client = new tmi.Client({
+                channels: [channel]
+            });
+
+            client.connect().then(() => {
+                // Successfully connected
+                setupModal.style.opacity = '0';
+                setTimeout(() => {
+                    setupModal.style.display = 'none';
+                }, 500);
+            }).catch(console.error);
+
+            // Listen for messages
+            client.on('message', (channel, tags, message, self) => {
+                if (self) return; // Ignore own automated messages if any
+                handleIncomingMessage(tags.username, message, tags.color);
+            });
+        }
+
+        /**
+         * CORE STATE MANAGEMENT
+         */
+        function handleIncomingMessage(username, text, userColor) {
+            let user = activeUsers.get(username);
+
+            // 1. Spawn a new duck if they aren't active
+            if (!user) {
+                user = spawnDuck(username, userColor);
+                activeUsers.set(username, user);
+            }
+
+            // 2. Reset their inactivity timer
+            clearTimeout(user.inactivityTimer);
+            user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
+
+            // 3. Display the chat message
+            showSpeechBubble(user, text);
+        }
+
+        /**
+         * RENDER LOGIC: Spawning Ducks
+         */
+        function spawnDuck(username, hexColor) {
+            const duckWrap = document.createElement('div');
+            duckWrap.className = 'duck-wrapper';
+
+            // Randomize the bobbing animation slightly so they don't look like an army marching in unison
+            const randomDelay = (Math.random() * 2).toFixed(2);
+            
+            // If the user hasn't set a custom Twitch color, generate a consistent one based on their name
+            const finalColor = hexColor ? hexColor : generateColorFromUsername(username);
+
+            duckWrap.innerHTML = `
+                <div class="bubble-container"></div>
+                <div class="duck-bob" style="animation-delay: -${randomDelay}s;">
+                    <div class="duck-svg">${getDuckSVG(finalColor)}</div>
+                    <div class="duck-name" style="color: ${finalColor};">${username}</div>
+                </div>
+            `;
+            
+            pond.appendChild(duckWrap);
+
+            return {
+                element: duckWrap,
+                duckColor: finalColor,
+                inactivityTimer: null,
+                bubbleTimer: null,
+                bubbleElement: null
+            };
+        }
+
+        /**
+         * RENDER LOGIC: Removing Ducks
+         */
+        function removeDuck(username) {
+            const user = activeUsers.get(username);
+            if (!user) return;
+
+            // Add leaving animation class
+            user.element.classList.add('leaving');
+
+            // Wait for animation to finish before removing from DOM
+            setTimeout(() => {
+                user.element.remove();
+                activeUsers.delete(username);
+            }, 500); // 500ms matches the CSS transition
+        }
+
+        /**
+         * RENDER LOGIC: Speech Bubbles
+         */
+        function showSpeechBubble(user, text) {
+            const container = user.element.querySelector('.bubble-container');
+            
+            // If they already have a bubble, clear its removal timer
+            if (user.bubbleTimer) {
+                clearTimeout(user.bubbleTimer);
+            }
+
+            // If no bubble element exists yet, create it
+            if (!user.bubbleElement) {
+                user.bubbleElement = document.createElement('div');
+                user.bubbleElement.className = 'speech-bubble';
+                container.appendChild(user.bubbleElement);
+            }
+
+            // Set the text. using textContent naturally escapes HTML tags, preventing malicious injection
+            user.bubbleElement.textContent = text;
+            
+            // Force reflow/repaint to restart animation if they spam messages rapidly
+            user.bubbleElement.classList.remove('active');
+            void user.bubbleElement.offsetWidth; 
+            user.bubbleElement.classList.add('active');
+
+            // Set timer to remove bubble
+            user.bubbleTimer = setTimeout(() => {
+                user.bubbleElement.classList.remove('active');
+                
+                // Wait for fade out animation before clearing DOM
+                setTimeout(() => {
+                    if(user.bubbleElement && !user.bubbleElement.classList.contains('active')) {
+                        user.bubbleElement.remove();
+                        user.bubbleElement = null;
+                    }
+                }, 300);
+            }, BUBBLE_DURATION_MS);
+        }
+
+        /**
+         * UTILITY: Generate a nice SVG Duck dynamically
+         */
+        function getDuckSVG(color) {
+            return `
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                <g stroke="#111827" stroke-width="3" stroke-linejoin="round">
+                    <!-- Tail -->
+                    <path d="M 25 55 L 5 40 L 20 70 Z" fill="${color}" />
+                    <!-- Body -->
+                    <ellipse cx="45" cy="65" rx="35" ry="25" fill="${color}" />
+                    <!-- Head -->
+                    <circle cx="65" cy="35" r="22" fill="${color}" />
+                    <!-- Beak Top -->
+                    <path d="M 85 30 Q 105 30 98 38 L 85 38 Z" fill="#FFB300" />
+                    <!-- Beak Bottom -->
+                    <path d="M 85 38 L 96 38 Q 96 44 85 43 Z" fill="#F39C12" />
+                    <!-- Wing -->
+                    <path d="M 35 60 Q 55 50 65 65 Q 45 75 35 60 Z" fill="rgba(0,0,0,0.1)" stroke="rgba(0,0,0,0.2)" stroke-width="2"/>
+                </g>
+                <!-- Eye -->
+                <circle cx="72" cy="28" r="3.5" fill="#111827" />
+                <circle cx="73" cy="27" r="1" fill="#FFFFFF" /> <!-- Eye glint -->
+            </svg>`;
+        }
+
+        /**
+         * UTILITY: Hashing function to ensure returning users get the same duck color
+         */
+        function generateColorFromUsername(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            
+            // To make sure ducks are brightly colored and visible, we use HSL
+            const hue = Math.abs(hash % 360);
+            // Saturation 70-100%, Lightness 50-70% for vibrant, pastel-ish colors
+            return `hsl(${hue}, 85%, 60%)`;
+        }
+
+        /**
+         * TESTING: Generate fake messages for OBS setup
+         */
+        const testMessages = [
+            "Quack quack!",
+            "This stream is awesome! 🦆",
+            "LUL",
+            "PogChamp",
+            "Can you explain that again?",
+            "Hello everyone!! 👋",
+            "W",
+            "Testing the overlay system, this is a much longer message to see how the text wrapping handles larger paragraphs."
+        ];
+        
+        let testCounter = 1;
+
+        function spawnTestMessage() {
+            // Close the modal to show the ducks
+            if (setupModal.style.display !== 'none') {
+                setupModal.style.opacity = '0';
+                setTimeout(() => setupModal.style.display = 'none', 500);
+            }
+
+            const username = `TestUser_${testCounter}`;
+            const message = testMessages[Math.floor(Math.random() * testMessages.length)];
+            
+            // Simulate an incoming message
+            handleIncomingMessage(username, message, null);
+            
+            testCounter++;
+            if (testCounter > 10) testCounter = 1;
+        }
+
+    </script>
+</body>
+</html>
