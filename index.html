@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Twitch Duck Overlay</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         /* === BASE & RESET === */
@@ -143,41 +147,61 @@
         /* === DUCK POND (OVERLAY SCENE) === */
         #pond {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            padding: 20px 40px;
-            display: flex;
-            flex-wrap: wrap-reverse; /* Stack ducks from bottom up */
-            justify-content: center;
-            align-content: flex-start;
-            align-items: flex-end;
-            gap: 20px;
+            bottom: -50px;
+            left: 5%;
+            width: 90%;
+            height: 250px;
+            background-color: rgba(173, 216, 230, 0.6);
+            border-radius: 50% 50% 0 0;
             pointer-events: none; /* Let clicks pass through if used over other elements */
+        }
+
+        #pond-sign {
+            position: absolute;
+            bottom: 210px;
+            left: 10%;
+            background: #8B5A2B;
+            color: #FFF;
+            padding: 8px 16px;
+            border: 3px solid #5C3A21;
+            border-radius: 4px;
+            font-family: 'Roboto Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transform: rotate(-4deg);
+            z-index: 10;
+        }
+
+        #pond-sign::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 40px;
+            background: #5C3A21;
+            z-index: -1;
         }
 
         /* === DUCK STYLING === */
         .duck-wrapper {
-            position: relative;
+            position: absolute;
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Entrance Animation */
-            transform: scale(0);
-            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            transition: transform 0.5s ease, opacity 0.5s ease;
+            /* Removed popIn for smooth sliding entrance via JS */
+            transition: transform 2s ease-in-out, left 2s ease-in-out, bottom 2s ease-in-out, opacity 600s linear;
         }
 
         .duck-wrapper.leaving {
-            transform: scale(0) !important;
             opacity: 0;
         }
 
-        .duck-bob {
-            /* Continuous floating animation */
-            animation: float 2s infinite ease-in-out alternate;
-            transform-origin: bottom center;
+        .duck-swim {
+            /* Continuous swimming animation side to side */
+            animation: swim-horizontal 15s infinite linear alternate;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -186,26 +210,22 @@
         .duck-svg {
             width: 80px;
             height: 80px;
+            animation: flip-duck 30s infinite steps(1);
             filter: drop-shadow(0px 8px 6px rgba(0,0,0,0.4));
         }
 
         .duck-name {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Roboto Condensed', sans-serif;
             font-size: 14px;
-            font-weight: 900;
-            color: white;
+            font-weight: 700;
+            background-color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
             margin-top: -10px;
             z-index: 2;
             text-transform: lowercase;
             letter-spacing: 0.5px;
-            /* Thick black outline for readability on stream */
-            -webkit-text-stroke: 1px black;
-            text-shadow: 
-                2px 2px 0 #000, 
-                -1px -1px 0 #000, 
-                1px -1px 0 #000, 
-                -1px 1px 0 #000, 
-                1px 1px 0 #000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* === SPEECH BUBBLES === */
@@ -221,35 +241,61 @@
             z-index: 10;
         }
 
-        .speech-bubble {
+        .speech-bubble, .action-bubble {
             position: relative;
             background: white;
             color: #111827;
             padding: 10px 14px;
             border-radius: 16px;
-            font-size: 14px;
+            font-family: 'Roboto Condensed', sans-serif;
+            font-size: 14px; /* Default size, JS might override */
             font-weight: 700;
             max-width: 200px;
             word-wrap: break-word;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             border: 3px solid #111827;
-            margin-bottom: 12px;
+            margin-bottom: 5px; /* Tighter for cascading */
+
+            /* To limit to max 3 lines */
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
             
             /* Hidden by default, animated in */
             opacity: 0;
             transform: translateY(10px) scale(0.8);
             transform-origin: bottom center;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Fast entrance transition */
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s linear;
         }
 
-        .speech-bubble.active {
-            opacity: 1;
+        .action-bubble {
+            background: #ffeb3b;
+            color: #d84315;
+            border-color: #d84315;
+            font-size: 18px; /* Slightly larger by default for actions */
+            font-style: italic;
+        }
+
+        .speech-bubble.active, .action-bubble.active,
+        .speech-bubble.fade-out, .action-bubble.fade-out {
             transform: translateY(0) scale(1);
         }
 
+        .speech-bubble.active, .action-bubble.active {
+            opacity: 1;
+        }
+
+        .speech-bubble.fade-out, .action-bubble.fade-out {
+            opacity: 0;
+            /* Fade transition set to 300s (5 minutes) for fading out over time */
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 300s linear;
+        }
+
         /* The tail of the speech bubble (White fill) */
-        .speech-bubble::after {
+        .speech-bubble:last-child::after, .action-bubble:last-child::after {
             content: '';
             position: absolute;
             bottom: -8px;
@@ -263,8 +309,12 @@
             z-index: 2;
         }
 
+        .action-bubble:last-child::after {
+            border-color: #ffeb3b transparent transparent transparent;
+        }
+
         /* The outline of the tail (Black outline) */
-        .speech-bubble::before {
+        .speech-bubble:last-child::before, .action-bubble:last-child::before {
             content: '';
             position: absolute;
             bottom: -12px;
@@ -278,15 +328,20 @@
             z-index: 1;
         }
 
-        /* === ANIMATIONS === */
-        @keyframes popIn {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
+        .action-bubble:last-child::before {
+             border-color: #d84315 transparent transparent transparent;
         }
 
-        @keyframes float {
-            0% { transform: translateY(0px) rotate(-2deg); }
-            100% { transform: translateY(-12px) rotate(2deg); }
+        /* === ANIMATIONS === */
+        @keyframes swim-horizontal {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(50px); }
+        }
+
+        @keyframes flip-duck {
+            0% { transform: scaleX(1); }
+            50% { transform: scaleX(-1); }
+            100% { transform: scaleX(1); }
         }
     </style>
 </head>
@@ -316,14 +371,15 @@
     </div>
 
     <!-- The Pond: Where all ducks spawn -->
+    <div id="pond-sign">Chat Pond</div>
     <div id="pond"></div>
 
     <script>
         /**
          * CONFIGURATION
          */
-        const INACTIVITY_LIMIT_MS = 60000 * 5; // 5 minutes. Ducks leave if silent this long.
-        const BUBBLE_DURATION_MS = 7000;       // 7 seconds. How long chat bubbles stay up.
+        const INACTIVITY_LIMIT_MS = 60000 * 10; // 10 minutes. Ducks leave if silent this long.
+        const BUBBLE_DURATION_MS = 300000;      // 5 minutes. How long chat bubbles stay up.
         
         let client = null; // tmi.js client
         const activeUsers = new Map(); // Stores { element, duckColor, inactivityTimer, bubbleTimer }
@@ -427,8 +483,20 @@
                 activeUsers.set(username, user);
             }
 
+            // Immediately reset opacity and clear leaving transition if they were fading
+            user.element.classList.remove('leaving');
+            // Temporarily disable transition so opacity snaps back to 1 instantly
+            user.element.style.transition = 'none';
+
             // 2. Reset their inactivity timer
             clearTimeout(user.inactivityTimer);
+
+            // Give the browser a tick to register opacity=1 before applying the 10 minute fade out
+            setTimeout(() => {
+                user.element.style.transition = ''; // Restore original transitions
+                user.element.classList.add('leaving');
+            }, 50);
+
             user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
 
             // 3. Display the chat message
@@ -442,7 +510,7 @@
             const duckWrap = document.createElement('div');
             duckWrap.className = 'duck-wrapper';
 
-            // Randomize the bobbing animation slightly so they don't look like an army marching in unison
+            // Randomize the swimming animation start time slightly
             const randomDelay = (Math.random() * 2).toFixed(2);
             
             // If the user hasn't set a custom Twitch color, generate a consistent one based on their name
@@ -450,20 +518,48 @@
 
             duckWrap.innerHTML = `
                 <div class="bubble-container"></div>
-                <div class="duck-bob" style="animation-delay: -${randomDelay}s;">
-                    <div class="duck-svg">${getDuckSVG(finalColor)}</div>
+                <div class="duck-swim" style="animation-delay: -${randomDelay}s;">
+                    <div class="duck-svg">
+                        <img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" />
+                    </div>
                     <div class="duck-name" style="color: ${finalColor};">${username}</div>
                 </div>
             `;
             
+            const img = duckWrap.querySelector('img');
+            img.onerror = () => {
+                img.parentElement.innerHTML = getDuckSVG(finalColor);
+            };
+
+            // Randomly choose an edge to spawn from: 0=left, 1=right, 2=bottom
+            const edge = Math.floor(Math.random() * 3);
+            if (edge === 0) {
+                duckWrap.style.left = '-100px';
+                duckWrap.style.bottom = `${Math.random() * 80 + 10}%`; // random height in pond
+            } else if (edge === 1) {
+                duckWrap.style.left = 'calc(100% + 100px)';
+                duckWrap.style.bottom = `${Math.random() * 80 + 10}%`;
+            } else {
+                duckWrap.style.left = `${Math.random() * 80 + 10}%`;
+                duckWrap.style.bottom = '-100px';
+            }
+
             pond.appendChild(duckWrap);
+
+            // Allow DOM to update then move to random position inside pond
+            setTimeout(() => {
+                const targetLeft = Math.random() * 80 + 10;
+                const targetBottom = Math.random() * 50 + 10;
+                duckWrap.style.left = `${targetLeft}%`;
+                duckWrap.style.bottom = `${targetBottom}%`;
+            }, 100);
 
             return {
                 element: duckWrap,
                 duckColor: finalColor,
                 inactivityTimer: null,
                 bubbleTimer: null,
-                bubbleElement: null
+                bubbles: [] // Changed from bubbleElement to bubbles array
             };
         }
 
@@ -474,14 +570,9 @@
             const user = activeUsers.get(username);
             if (!user) return;
 
-            // Add leaving animation class
-            user.element.classList.add('leaving');
-
-            // Wait for animation to finish before removing from DOM
-            setTimeout(() => {
-                user.element.remove();
-                activeUsers.delete(username);
-            }, 500); // 500ms matches the CSS transition
+            // Remove from DOM once fully faded
+            user.element.remove();
+            activeUsers.delete(username);
         }
 
         /**
@@ -490,38 +581,56 @@
         function showSpeechBubble(user, text) {
             const container = user.element.querySelector('.bubble-container');
             
-            // If they already have a bubble, clear its removal timer
-            if (user.bubbleTimer) {
-                clearTimeout(user.bubbleTimer);
+            // Limit to 3 bubbles
+            if (user.bubbles.length >= 3) {
+                const oldestBubble = user.bubbles.shift();
+                if (oldestBubble && oldestBubble.parentNode) {
+                    oldestBubble.parentNode.removeChild(oldestBubble);
+                }
             }
 
-            // If no bubble element exists yet, create it
-            if (!user.bubbleElement) {
-                user.bubbleElement = document.createElement('div');
-                user.bubbleElement.className = 'speech-bubble';
-                container.appendChild(user.bubbleElement);
+            const isAction = text.startsWith('!');
+            const bubbleEl = document.createElement('div');
+            bubbleEl.className = isAction ? 'action-bubble' : 'speech-bubble';
+
+            // Dynamic font sizing based on length to try and keep it within 3 lines
+            // Default max-width is 200px, so very long messages need smaller font
+            if (!isAction) {
+                if (text.length > 100) {
+                    bubbleEl.style.fontSize = '10px';
+                } else if (text.length > 50) {
+                    bubbleEl.style.fontSize = '12px';
+                }
             }
 
             // Set the text. using textContent naturally escapes HTML tags, preventing malicious injection
-            user.bubbleElement.textContent = text;
+            bubbleEl.textContent = text;
             
-            // Force reflow/repaint to restart animation if they spam messages rapidly
-            user.bubbleElement.classList.remove('active');
-            void user.bubbleElement.offsetWidth; 
-            user.bubbleElement.classList.add('active');
+            // Append to container
+            container.appendChild(bubbleEl);
+            user.bubbles.push(bubbleEl);
 
-            // Set timer to remove bubble
-            user.bubbleTimer = setTimeout(() => {
-                user.bubbleElement.classList.remove('active');
-                
-                // Wait for fade out animation before clearing DOM
-                setTimeout(() => {
-                    if(user.bubbleElement && !user.bubbleElement.classList.contains('active')) {
-                        user.bubbleElement.remove();
-                        user.bubbleElement = null;
-                    }
-                }, 300);
-            }, BUBBLE_DURATION_MS);
+            // Force reflow/repaint to start entrance animation
+            void bubbleEl.offsetWidth;
+            bubbleEl.classList.add('active');
+
+            // Start the 5-minute fade out transition immediately by removing the active class
+            // after a brief delay so the entrance animation can play
+            setTimeout(() => {
+                bubbleEl.classList.remove('active');
+                bubbleEl.classList.add('fade-out');
+            }, 500); // 500ms allows the entrance animation to finish
+
+            // Set timer to remove bubble from DOM after fade out (5 minutes)
+            setTimeout(() => {
+                const index = user.bubbles.indexOf(bubbleEl);
+                if (index > -1) {
+                    user.bubbles.splice(index, 1);
+                }
+                if (bubbleEl && bubbleEl.parentNode) {
+                    bubbleEl.remove();
+                }
+            }, BUBBLE_DURATION_MS + 500); // Wait for the fade out to finish
         }
 
         /**
