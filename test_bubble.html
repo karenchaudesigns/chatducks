@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    body { background: #333; padding: 100px; color: white; }
+    .speech-bubble {
+        position: relative;
+        background: white;
+        color: #111827;
+        padding: 10px 14px;
+        border-radius: 16px;
+        width: 150px;
+        text-align: center;
+        border: 3px solid #111827;
+    }
+
+    .speech-bubble::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        border-style: solid;
+        display: block;
+        width: 0;
+        z-index: 2;
+        /* start facing right */
+        left: 75%; transform: translateX(-50%) skewX(-30deg); border-width: 8px 8px 0; border-color: white transparent transparent transparent;
+    }
+
+    .speech-bubble::before {
+        content: '';
+        position: absolute;
+        bottom: -12px;
+        border-style: solid;
+        display: block;
+        width: 0;
+        z-index: 1;
+        left: 75%; transform: translateX(-50%) skewX(-30deg); border-width: 11px 11px 0; border-color: #111827 transparent transparent transparent;
+    }
+
+    .speech-bubble.left::after {
+        left: 25%; transform: translateX(-50%) skewX(30deg);
+    }
+    .speech-bubble.left::before {
+        left: 25%; transform: translateX(-50%) skewX(30deg);
+    }
+
+</style>
+</head>
+<body>
+    <div class="speech-bubble">Facing Right</div>
+    <br><br>
+    <div class="speech-bubble left">Facing Left</div>
+</body>
+</html>
