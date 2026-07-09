@@ -1,447 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch Duck Overlay</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* === BASE & RESET === */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            /* Transparent background is crucial for OBS Browser Sources */
-            background-color: transparent; 
-            overflow: hidden; /* Hide scrollbars */
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            width: 100vw;
-            height: 100vh;
-            color: white;
-        }
-
-        /* === SETUP OVERLAY === */
-        /* This is hidden when connected or accessed via OBS */
-        #setup-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.9); /* Dark slate background */
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease;
-        }
-
-        .setup-card {
-            background: #1e293b;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            max-width: 450px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid #334155;
-        }
-
-        .setup-card h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-            color: #f8fafc;
-        }
-
-        .setup-card p {
-            color: #94a3b8;
-            margin-bottom: 25px;
-            font-size: 15px;
-            line-height: 1.5;
-        }
-
-        .input-group {
-            display: flex;
-            margin-bottom: 15px;
-        }
-
-        .input-group input {
-            flex: 1;
-            padding: 12px 15px;
-            border: none;
-            border-radius: 8px 0 0 8px;
-            background: #0f172a;
-            color: white;
-            font-size: 16px;
-            outline: none;
-        }
-
-        .input-group input:focus {
-            box-shadow: inset 0 0 0 2px #3b82f6;
-        }
-
-        .input-group button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 0 8px 8px 0;
-            background: #3b82f6;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.2s;
-        }
-
-        .input-group button:hover {
-            background: #2563eb;
-        }
-
-        .btn-secondary {
-            background: #475569;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-            transition: background 0.2s;
-            width: 100%;
-        }
-
-        .btn-secondary:hover {
-            background: #334155;
-        }
-
-        .obs-tip {
-            margin-top: 25px;
-            font-size: 12px;
-            color: #64748b;
-            background: #0f172a;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: left;
-        }
-
-        .obs-tip code {
-            color: #fbbf24;
-            background: rgba(0,0,0,0.3);
-            padding: 2px 4px;
-            border-radius: 4px;
-        }
-
-        #status-msg {
-            color: #34d399;
-            font-weight: bold;
-            margin-top: 15px;
-            display: none;
-        }
-
-        /* === DUCK POND (OVERLAY SCENE) === */
-        #pond {
-            position: absolute;
-            bottom: -50px;
-            left: 5%;
-            width: 90%;
-            height: 250px;
-            pointer-events: none; /* Let clicks pass through if used over other elements */
-        }
-
-        #pond-bg {
-            position: absolute;
-            bottom: -50px;
-            left: 5%;
-            width: 90%;
-            height: 250px;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        #pond-sign {
-            position: absolute;
-            bottom: 210px;
-            left: 10%;
-            background: #8B5A2B;
-            color: #FFF;
-            padding: 8px 16px;
-            border: 3px solid #5C3A21;
-            border-radius: 4px;
-            font-family: 'Roboto Condensed', sans-serif;
-            font-size: 20px;
-            font-weight: bold;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            transform: rotate(-4deg);
-            z-index: 10;
-        }
-
-        #pond-sign::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 10px;
-            height: 40px;
-            background: #5C3A21;
-            z-index: -1;
-        }
-
-        /* === DUCK STYLING === */
-        .duck-wrapper {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* Removed popIn for smooth sliding entrance via JS */
-            transition: transform 2s ease-in-out, left 2s ease-in-out, bottom 2s ease-in-out, opacity 600s linear;
-        }
-
-        .duck-wrapper.leaving {
-            opacity: 0;
-        }
-
-        .duck-swim {
-            /* Continuous swimming animation side to side */
-            animation: swim-horizontal 15s infinite linear alternate;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .duck-svg {
-            width: 80px;
-            height: 80px;
-            animation: flip-duck 30s infinite steps(1);
-            animation-delay: var(--flip-delay, 0s);
-            filter: drop-shadow(0px 8px 6px rgba(0,0,0,0.4));
-        }
-
-        .duck-name {
-            font-family: 'Roboto Condensed', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            background-color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            margin-top: -10px;
-            z-index: 2;
-            text-transform: lowercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        /* === SPEECH BUBBLES === */
-        .bubble-container {
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 10;
-        }
-
-        .speech-bubble {
-            position: relative;
-            background: white;
-            color: #111827;
-            padding: 10px 14px;
-            border-radius: 16px;
-            font-family: 'Roboto Condensed', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            max-width: 200px;
-            word-wrap: break-word;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            border: 3px solid #111827;
-            margin-bottom: 5px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            opacity: 0;
-            transform: translateY(10px) scale(0.8);
-            transform-origin: bottom center;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s linear;
-        }
-
-        .action-container {
-            position: absolute;
-            bottom: 50%; /* Near back of the duck */
-            left: 50%;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 10;
-        }
-
-        .action-text {
-            font-family: 'Roboto Condensed', sans-serif;
-            font-size: 20px;
-            font-style: italic;
-            font-weight: 900;
-            color: #ffeb3b;
-            text-shadow: -1px -1px 0 #d84315, 1px -1px 0 #d84315, -1px 1px 0 #d84315, 1px 1px 0 #d84315, 0 2px 4px rgba(0,0,0,0.5);
-            margin-bottom: 5px;
-            opacity: 0;
-            transform: translateY(10px) scale(0.8);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s linear;
-
-            /* Animate to flip sides with the duck */
-            animation: flip-action 30s infinite steps(1);
-            animation-delay: var(--flip-delay, 0s);
-        }
-
-        .speech-bubble.active, .action-text.active {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-        }
-
-        .speech-bubble.fade-out, .action-text.fade-out {
-            opacity: 0;
-            transform: translateY(0) scale(0);
-            transition: transform 300s linear, opacity 300s linear;
-        }
-
-        /* The tail of the speech bubble (White fill) */
-        .speech-bubble:last-child::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            border-width: 8px 8px 0;
-            border-style: solid;
-            border-color: white transparent transparent transparent;
-            display: block;
-            width: 0;
-            z-index: 2;
-            animation: flip-tail-after 30s infinite steps(1);
-            animation-delay: var(--flip-delay, 0s);
-        }
-
-        /* The outline of the tail (Black outline) */
-        .speech-bubble:last-child::before {
-            content: '';
-            position: absolute;
-            bottom: -12px;
-            left: 50%;
-            border-width: 11px 11px 0;
-            border-style: solid;
-            border-color: #111827 transparent transparent transparent;
-            display: block;
-            width: 0;
-            z-index: 1;
-            animation: flip-tail-before 30s infinite steps(1);
-            animation-delay: var(--flip-delay, 0s);
-        }
-
-        /* === ANIMATIONS === */
-        @keyframes swim-horizontal {
-            0% { transform: translateX(-50px); }
-            100% { transform: translateX(50px); }
-        }
-
-        @keyframes flip-duck {
-            0% { transform: scaleX(1); }
-            50% { transform: scaleX(-1); }
-            100% { transform: scaleX(1); }
-        }
-
-        @keyframes flip-action {
-            /* Flip the action text so it stays near the tail */
-            0% { transform: translateX(-100%); } /* Left tail */
-            50% { transform: translateX(100%); } /* Right tail */
-            100% { transform: translateX(-100%); }
-        }
-
-        @keyframes flip-tail-after {
-            /* duck faces right at 0%, bill is to the right, point tail to bill -> right side */
-            0% { transform: translateX(-50%) skewX(-30deg); left: 65%; }
-            /* duck faces left at 50%, bill is to the left, point tail to bill -> left side */
-            50% { transform: translateX(-50%) skewX(30deg); left: 35%; }
-            100% { transform: translateX(-50%) skewX(-30deg); left: 65%; }
-        }
-
-        @keyframes flip-tail-before {
-            0% { transform: translateX(-50%) skewX(-30deg); left: 65%; }
-            50% { transform: translateX(-50%) skewX(30deg); left: 35%; }
-            100% { transform: translateX(-50%) skewX(-30deg); left: 65%; }
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Setup Modal: Only visible manually, hidden via URL Params -->
-    <div id="setup-modal">
-        <div class="setup-card">
-            <h1>🦆 Duck Chat</h1>
-            <p>Enter your Twitch channel name to connect. Viewers who chat will spawn as ducks!</p>
-            
-            <div class="input-group">
-                <input type="text" id="channel-input" placeholder="e.g. ninja">
-                <button onclick="startConnection()">Connect</button>
-            </div>
-            
-            <button class="btn-secondary" onclick="spawnTestMessage()">🧪 Send Test Message</button>
-            
-            <div id="status-msg">Connecting...</div>
-
-            <div class="obs-tip">
-                <strong>OBS/Streamlabs Setup:</strong><br><br>
-                To skip this screen automatically, add your channel to the URL in your Browser Source settings:<br><br>
-                <code>https://your-url.com/index.html?channel=YOUR_NAME</code>
-            </div>
-        </div>
-    </div>
-
-    <!-- The Pond: Where all ducks spawn -->
-    <div id="pond-sign">Chat Pond</div>
-
-    <svg id="pond-bg" viewBox="0 0 1000 300" preserveAspectRatio="none">
-        <!-- Kidney Bean Pond -->
-        <path d="M 100 150
-                 C 100 0, 900 0, 900 150
-                 C 900 300, 700 200, 500 200
-                 C 300 200, 100 300, 100 150 Z"
-              fill="#5EBDDB" />
-
-        <!-- Left Grass -->
-        <path d="M 90 140 Q 60 100 50 150 Q 70 160 90 140 Z" fill="#2E7D32" />
-        <path d="M 105 130 Q 80 80 70 140 Q 90 150 105 130 Z" fill="#388E3C" />
-
-        <!-- Right Stones -->
-        <ellipse cx="880" cy="220" rx="40" ry="20" fill="#7F8C8D" />
-        <ellipse cx="920" cy="240" rx="35" ry="15" fill="#95A5A6" />
-        <ellipse cx="850" cy="250" rx="25" ry="12" fill="#7F8C8D" />
-
-        <!-- Top Right Cattails -->
-        <g transform="translate(800, 20)">
-            <path d="M 20 80 Q 15 40 10 0" stroke="#2E7D32" stroke-width="4" fill="none" />
-            <rect x="7" y="10" width="6" height="30" rx="3" fill="#5D4037" />
-            <path d="M 40 90 Q 45 50 50 10" stroke="#2E7D32" stroke-width="4" fill="none" />
-            <rect x="47" y="20" width="6" height="30" rx="3" fill="#5D4037" />
-        </g>
-    </svg>
-    <div id="pond"></div>
-
-    <script>
         /**
          * CONFIGURATION
          */
         const INACTIVITY_LIMIT_MS = 60000 * 10; // 10 minutes. Ducks leave if silent this long.
         const BUBBLE_DURATION_MS = 300000;      // 5 minutes. How long chat bubbles stay up.
-        
+
         let client = null; // tmi.js client
         const activeUsers = new Map(); // Stores { element, duckColor, inactivityTimer, bubbleTimer }
         const pond = document.getElementById('pond');
@@ -460,7 +22,7 @@
                 callback();
                 return;
             }
-            
+
             if (attempt >= TMI_CDNS.length) {
                 statusMsg.style.display = 'block';
                 statusMsg.style.color = '#ef4444';
@@ -484,7 +46,7 @@
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             const channelParam = params.get('channel');
-            
+
             if (channelParam) {
                 // If loaded via OBS with a parameter, skip UI and connect instantly
                 setupModal.style.display = 'none';
@@ -495,11 +57,11 @@
         function startConnection() {
             const channel = document.getElementById('channel-input').value.trim();
             if (!channel) return;
-            
+
             statusMsg.style.display = 'block';
             statusMsg.style.color = '#34d399';
             statusMsg.innerText = `Loading libraries...`;
-            
+
             loadTmi(() => {
                 statusMsg.innerText = `Connecting to #${channel}...`;
                 connectToTwitch(channel);
@@ -577,7 +139,7 @@
 
             // Randomize the swimming animation start time slightly
             const randomDelay = (Math.random() * 2).toFixed(2);
-            
+
             // Random animation delay for the flip animation (0s to 30s)
             const flipDelay = -(Math.random() * 30).toFixed(2) + 's';
             duckWrap.style.setProperty('--flip-delay', flipDelay);
@@ -595,7 +157,7 @@
                     <div class="duck-name" style="color: ${finalColor};">${username}</div>
                 </div>
             `;
-            
+
             const img = duckWrap.querySelector('img');
             img.onerror = () => {
                 img.parentElement.innerHTML = getDuckSVG(finalColor);
@@ -727,7 +289,7 @@
          */
         function showSpeechBubble(user, text, emotes) {
             const container = user.element.querySelector('.bubble-container');
-            
+
             // Limit to 3 bubbles
             if (user.bubbles.length >= 3) {
                 const oldestBubble = user.bubbles.shift();
@@ -746,7 +308,7 @@
             }
 
             bubbleEl.innerHTML = parseEmotes(text, emotes);
-            
+
             container.appendChild(bubbleEl);
             user.bubbles.push(bubbleEl);
 
@@ -803,7 +365,7 @@
             for (let i = 0; i < str.length; i++) {
                 hash = str.charCodeAt(i) + ((hash << 5) - hash);
             }
-            
+
             // To make sure ducks are brightly colored and visible, we use HSL
             const hue = Math.abs(hash % 360);
             // Saturation 70-100%, Lightness 50-70% for vibrant, pastel-ish colors
@@ -823,7 +385,7 @@
             "!W",
             "Testing the overlay system, this is a much longer message to see how the text wrapping handles larger paragraphs."
         ];
-        
+
         let testCounter = 1;
 
         function spawnTestMessage() {
@@ -835,7 +397,7 @@
 
             const username = `TestUser_${testCounter}`;
             const message = testMessages[Math.floor(Math.random() * testMessages.length)];
-            
+
             // Add mock emotes for testing if it's an action or if it contains certain keywords
             let emotes = null;
             if (message.includes("PogChamp")) {
@@ -846,11 +408,7 @@
             }
             // Simulate an incoming message
             handleIncomingMessage(username, message, null, emotes);
-            
+
             testCounter++;
             if (testCounter > 10) testCounter = 1;
         }
-
-    </script>
-</body>
-</html>
