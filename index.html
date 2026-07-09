@@ -147,7 +147,7 @@
         /* === DUCK POND (OVERLAY SCENE) === */
         #pond {
             position: absolute;
-            bottom: -50px;
+            bottom: 0px;
             left: 5%;
             width: 90%;
             height: 250px;
@@ -156,7 +156,7 @@
 
         #pond-bg {
             position: absolute;
-            bottom: -50px;
+            bottom: 0px;
             left: 5%;
             width: 90%;
             height: 250px;
@@ -166,7 +166,7 @@
 
         #pond-sign {
             position: absolute;
-            bottom: 210px;
+            bottom: 260px;
             left: 10%;
             background: #8B5A2B;
             color: #FFF;
@@ -199,12 +199,16 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Removed popIn for smooth sliding entrance via JS */
-            transition: transform 2s ease-in-out, left 2s ease-in-out, bottom 2s ease-in-out, opacity 600s linear;
+            transform-origin: bottom center;
+            /* Entrance transitions (fast) */
+            transition: transform 2s ease-in-out, left 2s ease-in-out, bottom 2s ease-in-out;
         }
 
         .duck-wrapper.leaving {
-            opacity: 0;
+            /* Exit transitions (slow drift backwards) */
+            transform: scale(0) !important;
+            bottom: 90% !important;
+            transition: transform 600s linear, bottom 600s linear;
         }
 
         .duck-swim {
@@ -264,7 +268,7 @@
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             border: 3px solid #111827;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
@@ -409,6 +413,18 @@
     <div id="pond-sign">Chat Pond</div>
 
     <svg id="pond-bg" viewBox="0 0 1000 300" preserveAspectRatio="none">
+        <!-- New organic grassy area around pond -->
+        <path d="M 0 300
+                 L 0 0
+                 L 1000 0
+                 L 1000 300
+                 Z" fill="#3E8E41" />
+        <path d="M 20 150
+                 C 20 10 980 10 980 150
+                 C 980 320 700 230 500 230
+                 C 300 230 20 320 20 150 Z"
+              fill="#4CAF50" />
+
         <!-- Kidney Bean Pond -->
         <path d="M 100 150
                  C 100 0, 900 0, 900 150
@@ -416,22 +432,59 @@
                  C 300 200, 100 300, 100 150 Z"
               fill="#5EBDDB" />
 
-        <!-- Left Grass -->
-        <path d="M 90 140 Q 60 100 50 150 Q 70 160 90 140 Z" fill="#2E7D32" />
-        <path d="M 105 130 Q 80 80 70 140 Q 90 150 105 130 Z" fill="#388E3C" />
+        <!-- Cattails (reusable) -->
+        <defs>
+            <g id="cattail">
+                <!-- stem -->
+                <path d="M 0 50 Q 5 25 10 0" stroke="#2E7D32" stroke-width="2" fill="none" />
+                <path d="M 0 50 Q -5 25 -10 0" stroke="#2E7D32" stroke-width="2" fill="none" />
 
-        <!-- Right Stones -->
-        <ellipse cx="880" cy="220" rx="40" ry="20" fill="#7F8C8D" />
-        <ellipse cx="920" cy="240" rx="35" ry="15" fill="#95A5A6" />
-        <ellipse cx="850" cy="250" rx="25" ry="12" fill="#7F8C8D" />
+                <!-- brown bit -->
+                <rect x="7" y="5" width="6" height="20" rx="3" fill="#5D4037" />
+                <rect x="-13" y="10" width="6" height="20" rx="3" fill="#5D4037" />
+
+                <!-- leaves -->
+                <path d="M 0 50 Q -10 30 -20 35 Q -10 40 0 50" fill="#388E3C" />
+                <path d="M 0 50 Q 15 25 25 20 Q 10 40 0 50" fill="#2E7D32" />
+            </g>
+            <g id="stone">
+                <ellipse cx="0" cy="0" rx="15" ry="8" fill="#7F8C8D" />
+                <ellipse cx="5" cy="-2" rx="10" ry="5" fill="#95A5A6" />
+                <ellipse cx="-8" cy="2" rx="8" ry="4" fill="#697677" />
+            </g>
+        </defs>
+
+        <!-- Top Left Cattails -->
+        <use href="#cattail" x="120" y="30" transform="scale(1.2)" />
+        <use href="#cattail" x="150" y="10" transform="scale(0.9)" />
+        <use href="#cattail" x="80" y="40" />
 
         <!-- Top Right Cattails -->
-        <g transform="translate(800, 20)">
-            <path d="M 20 80 Q 15 40 10 0" stroke="#2E7D32" stroke-width="4" fill="none" />
-            <rect x="7" y="10" width="6" height="30" rx="3" fill="#5D4037" />
-            <path d="M 40 90 Q 45 50 50 10" stroke="#2E7D32" stroke-width="4" fill="none" />
-            <rect x="47" y="20" width="6" height="30" rx="3" fill="#5D4037" />
-        </g>
+        <use href="#cattail" x="850" y="20" transform="scale(1.1)" />
+        <use href="#cattail" x="820" y="10" transform="scale(1.3)" />
+        <use href="#cattail" x="880" y="40" transform="scale(0.8)" />
+
+        <!-- Bottom Left Cattails -->
+        <use href="#cattail" x="150" y="220" transform="scale(1.5)" />
+        <use href="#cattail" x="200" y="200" transform="scale(1.2)" />
+
+        <!-- Bottom Right Cattails -->
+        <use href="#cattail" x="850" y="210" transform="scale(1.4)" />
+        <use href="#cattail" x="780" y="190" transform="scale(1)" />
+
+        <!-- Stones -->
+        <use href="#stone" x="250" y="180" transform="scale(1.2)" />
+        <use href="#stone" x="750" y="150" transform="scale(0.8)" />
+        <use href="#stone" x="400" y="210" transform="scale(1.5)" />
+        <use href="#stone" x="600" y="205" transform="scale(1)" />
+        <use href="#stone" x="880" y="120" transform="scale(1.1)" />
+        <use href="#stone" x="120" y="100" transform="scale(0.9)" />
+
+        <!-- Additional grass patches for texture -->
+        <path d="M 500 240 Q 510 210 520 240 Q 500 250 500 240" fill="#2E7D32" />
+        <path d="M 300 230 Q 315 190 330 230 Q 300 240 300 230" fill="#2E7D32" />
+        <path d="M 700 230 Q 690 190 680 230 Q 700 240 700 230" fill="#2E7D32" />
+
     </svg>
     <div id="pond"></div>
 
@@ -447,6 +500,8 @@
         const pond = document.getElementById('pond');
         const setupModal = document.getElementById('setup-modal');
         const statusMsg = document.getElementById('status-msg');
+
+        let globalZIndex = 100;
 
         /**
          * DYNAMIC SCRIPT LOADER WITH FALLBACKS
@@ -544,19 +599,26 @@
                 activeUsers.set(username, user);
             }
 
-            // Immediately reset opacity and clear leaving transition if they were fading
+            globalZIndex++;
+            user.element.style.zIndex = globalZIndex;
+
+            // Clear leaving class to start entry animation (or stop drifting back)
             user.element.classList.remove('leaving');
-            // Temporarily disable transition so opacity snaps back to 1 instantly
-            user.element.style.transition = 'none';
+
+            // Force reflow so removing the leaving class actually resets the transition state to the fast entrance
+            void user.element.offsetWidth;
+
+            // Bring them to the front (fast entrance animation triggers here)
+            user.element.style.bottom = '5%';
+            user.element.style.transform = 'scale(1.5)';
 
             // 2. Reset their inactivity timer
             clearTimeout(user.inactivityTimer);
 
-            // Give the browser a tick to register opacity=1 before applying the 10 minute fade out
+            // Wait 2 seconds for the entrance animation to finish, then start the slow drift back
             setTimeout(() => {
-                user.element.style.transition = ''; // Restore original transitions
                 user.element.classList.add('leaving');
-            }, 50);
+            }, 2000);
 
             user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
 
@@ -601,27 +663,18 @@
                 img.parentElement.innerHTML = getDuckSVG(finalColor);
             };
 
-            // Randomly choose an edge to spawn from: 0=left, 1=right, 2=bottom
-            const edge = Math.floor(Math.random() * 3);
-            if (edge === 0) {
-                duckWrap.style.left = '-100px';
-                duckWrap.style.bottom = `${Math.random() * 80 + 10}%`; // random height in pond
-            } else if (edge === 1) {
-                duckWrap.style.left = 'calc(100% + 100px)';
-                duckWrap.style.bottom = `${Math.random() * 80 + 10}%`;
-            } else {
-                duckWrap.style.left = `${Math.random() * 80 + 10}%`;
-                duckWrap.style.bottom = '-100px';
-            }
+            // Initialize duck below the pond so it peeks up on entrance
+            duckWrap.style.left = `${Math.random() * 80 + 10}%`;
+            duckWrap.style.bottom = '-20%';
+            duckWrap.style.transform = 'scale(1.5)';
 
             pond.appendChild(duckWrap);
 
-            // Allow DOM to update then move to random position inside pond
+            // Allow DOM to update then let it be horizontally positioned.
+            // Perspective mode (handleIncomingMessage) handles the bottom/scale.
             setTimeout(() => {
                 const targetLeft = Math.random() * 80 + 10;
-                const targetBottom = Math.random() * 50 + 10;
                 duckWrap.style.left = `${targetLeft}%`;
-                duckWrap.style.bottom = `${targetBottom}%`;
             }, 100);
 
             return {
