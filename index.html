@@ -213,7 +213,7 @@
 
         .duck-swim {
             /* Continuous swimming animation side to side */
-            animation: swim-horizontal 15s infinite linear alternate;
+            animation: swim-horizontal 30s infinite linear;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -222,9 +222,10 @@
         .duck-svg {
             width: 80px;
             height: 80px;
-            animation: flip-duck 30s infinite steps(1);
+
             animation-delay: var(--flip-delay, 0s);
             filter: drop-shadow(0px 8px 6px rgba(0,0,0,0.4));
+            animation: flip-duck 30s infinite linear;
         }
 
         .duck-name {
@@ -240,6 +241,21 @@
             letter-spacing: 0.5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
+
+
+        .lurking .duck-swim, .lurking .duck-svg, .lurking .action-text {
+            animation: none !important;
+        }
+        .lurking .duck-svg {
+            transform: scaleX(1) !important;}
+
+
+        .conversing .duck-swim, .conversing .duck-svg {
+            animation: none !important;}
+        .conversing.facing-left .duck-svg {
+            transform: scaleX(-1) !important;}
+        .conversing.facing-right .duck-svg {
+            transform: scaleX(1) !important;}
 
         /* === SPEECH BUBBLES === */
         .bubble-container {
@@ -259,7 +275,7 @@
             position: relative;
             background: white;
             color: #111827;
-            padding: 4px 8px;
+            padding: 8px 12px;
             border-radius: 16px;
             font-family: 'Roboto Condensed', sans-serif;
             font-size: 14px;
@@ -268,9 +284,8 @@
             word-wrap: break-word;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            border: 3px solid #111827;
+            border: 2px solid #111827;
             margin-bottom: 0px;
-            aspect-ratio: 16 / 9;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -324,10 +339,10 @@
         .speech-bubble:last-child::after {
             content: '';
             position: absolute;
-            bottom: -8px;
+            bottom: -6px;
             left: 50%;
             transform: translateX(-50%);
-            border-width: 8px 8px 0;
+            border-width: 6px 6px 0;
             border-style: solid;
             border-color: white transparent transparent transparent;
             display: block;
@@ -339,10 +354,10 @@
         .speech-bubble:last-child::before {
             content: '';
             position: absolute;
-            bottom: -12px;
+            bottom: -9px;
             left: 50%;
             transform: translateX(-50%);
-            border-width: 11px 11px 0;
+            border-width: 9px 9px 0;
             border-style: solid;
             border-color: #111827 transparent transparent transparent;
             display: block;
@@ -358,9 +373,12 @@
 
         @keyframes flip-duck {
             0% { transform: scaleX(1); }
+            49.9% { transform: scaleX(1); }
             50% { transform: scaleX(-1); }
-            100% { transform: scaleX(1); }
+            100% { transform: scaleX(-1); }
         }
+
+
 
         @keyframes flip-action {
             /* Flip the action text so it stays near the tail */
@@ -583,7 +601,7 @@
             // Listen for messages
             client.on('message', (channel, tags, message, self) => {
                 if (self) return; // Ignore own automated messages if any
-                handleIncomingMessage(tags.username, message, tags.color, tags.emotes, tags);
+                handleIncomingMessage(tags['display-name'] || tags.username, message, tags.color, tags.emotes, tags);
             });
         }
 
@@ -603,10 +621,69 @@
 
         function handleIncomingMessage(username, text, userColor, emotes, tags) {
             let textTrim = text.trim();
+            if (textTrim.startsWith('!countdown ')) {
+                const duration = parseInt(textTrim.split(' ')[1]);
+                if (!isNaN(duration) && duration > 0) {
+                    const duckWrap = document.createElement('div');
+                    duckWrap.className = 'duck-wrapper countdown-duck';
+                    duckWrap.style.left = '5%';
+                    duckWrap.style.bottom = '5%';
+                    duckWrap.style.transform = 'scale(1.5)';
+                    duckWrap.style.zIndex = ++globalZIndex;
+
+                    const finalColor = generateColorFromUsername(username);
+
+                    duckWrap.innerHTML = `
+                        <div class="duck-swim" style="animation: none !important;">
+                            <div class="bubble-container"></div>
+                            <div class="duck-svg" style="transform: scaleX(1) !important;">
+                                <img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'custom_ducks/' + '${username}'.toLowerCase() + '.png';" />
+                            </div>
+                            <div class="duck-name" style="color: ${finalColor};">Countdown for ${username}</div>
+                        </div>
+                    `;
+                    pond.appendChild(duckWrap);
+
+                    let timeLeft = duration;
+                    const container = duckWrap.querySelector('.bubble-container');
+
+                    const updateBubble = () => {
+                        container.innerHTML = '';
+                        const bubbleEl = document.createElement('div');
+                        bubbleEl.className = 'speech-bubble active';
+                        bubbleEl.innerHTML = timeLeft;
+                        container.appendChild(bubbleEl);
+                    };
+
+                    updateBubble();
+
+                    const interval = setInterval(() => {
+                        timeLeft--;
+                        if (timeLeft <= 0) {
+                            clearInterval(interval);
+                            duckWrap.remove();
+                        } else {
+                            updateBubble();
+                        }
+                    }, 1000);
+                }
+                return;
+            }
+
             if (textTrim === '!scatter') {
                 scatterDucks();
                 return;
             }
+            if (textTrim === '!shoo' || textTrim === '!reset') {
+                if (tags && (tags.mod || tags.subscriber || (tags.badges && tags.badges.vip))) {
+                    activeUsers.forEach(u => u.element.remove());
+                    activeUsers.clear();
+                    // Remove countdown ducks
+                    document.querySelectorAll('.countdown-duck').forEach(el => el.remove());
+                }
+                return;
+            }
+
             if (textTrim === '!clear') {
                 if (tags && (tags.mod || tags.subscriber || (tags.badges && tags.badges.vip))) {
                     activeUsers.forEach(u => {
@@ -619,12 +696,23 @@
                 return;
             }
 
+
             let user = activeUsers.get(username);
+
+
 
             // 1. Spawn a new duck if they aren't active
             if (!user) {
                 user = spawnDuck(username, userColor);
                 activeUsers.set(username, user);
+            }
+
+            if (['!back', '!unlurk', '!bellyflop', '!makeadramaticentrance'].includes(textTrim)) {
+                user.isLurking = false;
+                user.element.classList.remove("lurking");
+                user.element.querySelector('.duck-svg').innerHTML = `<img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`;
+                scatterDucks();
+                return;
             }
 
             // LURK AND UNLURK SYSTEM
@@ -639,6 +727,7 @@
                 user.element.style.transform = 'scale(0.6)';
                 user.element.style.bottom = '90%';
                 user.element.style.left = Math.random() > 0.5 ? '5%' : '95%';
+                user.element.classList.add("lurking");
                 clearTimeout(user.inactivityTimer);
                 return; // Stop processing further for lurk
             }
@@ -646,9 +735,8 @@
             if (user.isLurking) {
                 if (Date.now() - user.lurkTime > 300000) {
                     user.isLurking = false;
-                    if (user.originalImage) {
-                        user.element.querySelector('.duck-svg').innerHTML = user.originalImage;
-                    }
+                    user.element.classList.remove("lurking");
+                    user.element.querySelector('.duck-svg').innerHTML = `<img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`;
                     // Scatter handles repositioning later, but reset scale and let it re-animate
                     scatterDucks();
                 } else {
@@ -683,6 +771,47 @@
 
             user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
 
+            // REPLY LOGIC
+            if (tags && tags['reply-parent-user-login']) {
+                const parentUsername = tags['reply-parent-user-login'];
+                // Check if parent user is case-insensitively active. tmi.js tags are usually lowercase, but let's be safe.
+                let parentUser = activeUsers.get(parentUsername);
+                if (!parentUser) {
+                    for (let [key, val] of activeUsers.entries()) {
+                        if (key.toLowerCase() === parentUsername.toLowerCase()) {
+                            parentUser = val;
+                            break;
+                        }
+                    }
+                }
+
+                if (parentUser && !parentUser.isLurking && !parentUser.isStatic && !user.isStatic) {
+                    // Calculate meeting point
+                    const meetingPoint = Math.random() * 60 + 20; // Between 20% and 80%
+
+                    user.element.classList.add('conversing');
+                    parentUser.element.classList.add('conversing');
+
+                    // User A replies to User B. User B (parent) swims up to User A (user).
+                    // They face each other.
+                    // Let User A be on the left (meetingPoint - 5), User B on the right (meetingPoint + 5)
+                    user.element.style.left = `${meetingPoint - 5}%`;
+                    parentUser.element.style.left = `${meetingPoint + 5}%`;
+
+                    user.element.classList.remove('facing-left');
+                    user.element.classList.add('facing-right');
+
+                    parentUser.element.classList.remove('facing-right');
+                    parentUser.element.classList.add('facing-left');
+
+                    setTimeout(() => {
+                        user.element.classList.remove('conversing', 'facing-right', 'facing-left');
+                        parentUser.element.classList.remove('conversing', 'facing-right', 'facing-left');
+                        scatterDucks();
+                    }, 15000); // Talk for 15 seconds then scatter
+                }
+            }
+
             // 3. Display the chat message
             if (text.startsWith('!')) {
                 showActionText(user, text, emotes);
@@ -713,17 +842,12 @@
                     <div class="action-container"></div>
                     <div class="bubble-container"></div>
                     <div class="duck-svg">
-                        <img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" />
+                        <img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'custom_ducks/' + '${username}'.toLowerCase() + '.png';" />
                     </div>
                     <div class="duck-name" style="color: ${finalColor};">${username}</div>
                 </div>
             `;
             
-            const img = duckWrap.querySelector('img');
-            img.onerror = () => {
-                img.parentElement.innerHTML = getDuckSVG(finalColor);
-            };
-
             // Initialize duck below the pond so it peeks up on entrance
             duckWrap.style.left = `${Math.random() * 80 + 10}%`;
             duckWrap.style.bottom = '-20%';
