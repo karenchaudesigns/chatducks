@@ -21,7 +21,7 @@ replacements.sort((a, b) => a.start - b.start);
 let formatted = "";
 for (const r of replacements) {
   formatted += message.substring(lastEnd, r.start);
-  formatted += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${r.emoteId}/default/dark/1.0" class="emote" style="vertical-align: middle; height: 1.5em;" />`;
+  formatted += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${r.emoteId}/default/dark/1.0" class="emote" style="vertical-align: middle; height: 2em;" />`;
   lastEnd = r.end + 1;
 }
 formatted += message.substring(lastEnd);
