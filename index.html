@@ -1213,6 +1213,75 @@
 
             user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
 
+            // HUG LOGIC
+            if (textTrim.startsWith('!hug')) {
+                let args = textTrim.split(/\s+/).slice(1);
+                let participants = new Set();
+                if (!user.isStatic && !user.isLurking) {
+                    participants.add(user);
+                }
+
+                if (args.length > 0) {
+                    for (let arg of args) {
+                        let targetName = arg.startsWith('@') ? arg.substring(1) : arg;
+                        let targetUser = null;
+                        for (let [k, v] of activeUsers.entries()) {
+                            if (k.toLowerCase() === targetName.toLowerCase()) {
+                                targetUser = v;
+                                break;
+                            }
+                        }
+                        if (targetUser && !targetUser.isLurking && !targetUser.isStatic && !targetUser.isBusy) {
+                            participants.add(targetUser);
+                        }
+                    }
+                } else {
+                    activeUsers.forEach(u => {
+                        if (!u.isLurking && !u.isStatic && !u.isBusy) {
+                            participants.add(u);
+                        }
+                    });
+                }
+
+                if (participants.size > 1) {
+                    let duckArray = Array.from(participants);
+                    duckArray.forEach(u => u.isBusy = true);
+
+                    setTimeout(() => {
+                        const meetingPoint = Math.random() * 60 + 20;
+
+                        duckArray.forEach((u, i) => {
+                            u.element.classList.add('conversing');
+
+                            let pos;
+                            if (duckArray.length === 2) {
+                                pos = (i === 0) ? meetingPoint - 4 : meetingPoint + 4;
+                            } else {
+                                let offset = (i - (duckArray.length - 1) / 2) * (40 / Math.max(duckArray.length, 2));
+                                pos = Math.max(5, Math.min(95, meetingPoint + offset));
+                            }
+
+                            u.element.style.left = `${pos}%`;
+
+                            u.element.classList.remove('facing-left', 'facing-right');
+                            if (pos <= meetingPoint) {
+                                u.element.classList.add('facing-right');
+                            } else {
+                                u.element.classList.add('facing-left');
+                            }
+                        });
+
+                        setTimeout(() => {
+                            duckArray.forEach(u => {
+                                u.element.classList.remove('conversing', 'facing-right', 'facing-left');
+                                u.isBusy = false;
+                            });
+                            scatterDucks();
+                        }, 10000);
+                    }, 200);
+                }
+            }
+
             // REPLY LOGIC
             if (tags && tags['reply-parent-user-login']) {
                 const parentUsername = tags['reply-parent-user-login'];
