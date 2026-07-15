@@ -8,7 +8,7 @@ with open('index.html', 'r') as f:
 
 # Remove from current location
 content = re.sub(
-    r'\n            if \(\[\'!back\', \'!unlurk\', \'!bellyflop\', \'!makeadramaticentrance\'\]\.includes\(textTrim\)\) \{\n                if \(user\) \{\n                    user\.isLurking = false;\n                    user\.element\.classList\.remove\("lurking"\);\n                    user\.element\.querySelector\(\'\.duck-svg\'\)\.innerHTML = `<img src="custom_ducks/\$\{username\}\.png" alt="\$\{username\}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this\.onerror = \(\) => \{ this\.onerror = null; this\.parentElement\.innerHTML = getDuckSVG\(\'\$\{user\.duckColor\}\'\); \}; this\.src = \'custom_ducks/\' \+ \'\$\{username\}\'\.toLowerCase\(\) \+ \'\.png\';" />`;\n                    scatterDucks\(\);\n                \}\n                return;\n            \}\n',
+    r'\n            if \(\[\'!back\', \'!unlurk\', \'!bellyflop\', \'!makeadramaticentrance\'\]\.includes\(textTrim\)\) \{\n                if \(user\) \{\n                    user\.isLurking = false;\n                    user\.element\.classList\.remove\("lurking"\);\n                    user\.element\.querySelector\(\'\.duck-svg\'\)\.innerHTML = `<img src="assets/custom_ducks/\$\{username\}\.png" alt="\$\{username\}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this\.onerror = \(\) => \{ this\.onerror = null; this\.parentElement\.innerHTML = getDuckSVG\(\'\$\{user\.duckColor\}\'\); \}; this\.src = \'assets/custom_ducks/\' \+ \'\$\{username\}\'\.toLowerCase\(\) \+ \'\.png\';" />`;\n                    scatterDucks\(\);\n                \}\n                return;\n            \}\n',
     '',
     content
 )
@@ -19,7 +19,7 @@ unlurk_commands = r"""
                 if (user) {
                     user.isLurking = false;
                     user.element.classList.remove("lurking");
-                    user.element.querySelector('.duck-svg').innerHTML = `<img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`;
+                    user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`;
                     scatterDucks();
                 }
                 return;

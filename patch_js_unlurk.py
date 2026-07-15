@@ -4,7 +4,7 @@ with open('index.html', 'r') as f:
     content = f.read()
 
 # Helper for the new unlurk logic (refreshing image using case-insensitive onerror logic)
-refresh_duck_html = r"""`<img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`"""
+refresh_duck_html = r"""`<img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`"""
 
 # 1. Update lurk command block to add .lurking class
 content = re.sub(

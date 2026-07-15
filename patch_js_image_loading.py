@@ -7,8 +7,8 @@ with open('index.html', 'r') as f:
 # The tmi tag display-name preserves case, but tmi.js username tag might already be lowercased depending on the version. Let's make spawnDuck robust.
 
 # Update img tag inside spawnDuck
-old_img = r'<img src="custom_ducks/\$\{username\}\.png" alt="\$\{username\}" style="width: 100%; height: 100%; object-fit: contain;" />'
-new_img = r"""<img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'custom_ducks/' + '${username}'.toLowerCase() + '.png';" />"""
+old_img = r'<img src="assets/custom_ducks/\$\{username\}\.png" alt="\$\{username\}" style="width: 100%; height: 100%; object-fit: contain;" />'
+new_img = r"""<img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />"""
 
 content = re.sub(old_img, new_img, content)
 

@@ -11,7 +11,7 @@ A fun, interactive chat overlay for Twitch that spawns a swimming duck for each 
 
 ## Custom Ducks
 You can give users specific custom ducks (instead of the dynamically generated colored SVGs).
-Place a `.png` file inside the `custom_ducks/` folder matching their Twitch username. The system is case-insensitive, so both `TechJeeper.png` and `techjeeper.png` will work.
+Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twitch username. The system is case-insensitive, so both `TechJeeper.png` and `techjeeper.png` will work.
 
 ## Commands
 
