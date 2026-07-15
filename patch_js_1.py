@@ -70,7 +70,7 @@ replace_handle = '''        function scatterDucks() {
                 if (!user.originalImage) {
                     user.originalImage = user.element.querySelector('.duck-svg').innerHTML;
                 }
-                user.element.querySelector('.duck-svg').innerHTML = `<img src="custom_ducks/lurkyduck.png" alt="lurkyduck" style="width: 100%; height: 100%; object-fit: contain;" />`;
+                user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/lurkyduck.png" alt="lurkyduck" style="width: 100%; height: 100%; object-fit: contain;" />`;
                 user.element.style.transform = 'scale(0.6)';
                 user.element.style.bottom = '90%';
                 user.element.style.left = Math.random() > 0.5 ? '5%' : '95%';

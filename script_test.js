@@ -152,7 +152,7 @@
                 <div class="bubble-container"></div>
                 <div class="duck-swim" style="animation-delay: -${randomDelay}s;">
                     <div class="duck-svg">
-                        <img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" />
+                        <img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" />
                     </div>
                     <div class="duck-name" style="color: ${finalColor};">${username}</div>
                 </div>

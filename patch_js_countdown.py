@@ -20,7 +20,7 @@ countdown_cmd = r"""
                         <div class="duck-swim" style="animation: none !important;">
                             <div class="bubble-container"></div>
                             <div class="duck-svg" style="transform: scaleX(1) !important;">
-                                <img src="custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'custom_ducks/' + '${username}'.toLowerCase() + '.png';" />
+                                <img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />
                             </div>
                             <div class="duck-name" style="color: ${finalColor};">Countdown for ${username}</div>
                         </div>
