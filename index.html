@@ -871,9 +871,9 @@
             duckWrap.className = 'duck-wrapper';
             duckWrap.style.left = `${Math.random() * 80 + 10}%`;
             duckWrap.style.bottom = '120%';
-            duckWrap.style.transform = 'scale(0.3)';
+            duckWrap.style.transform = 'scale(1.5)';
             duckWrap.style.zIndex = ++globalZIndex;
-            duckWrap.style.transition = 'bottom 5s linear, opacity 1s linear';
+            duckWrap.style.transition = 'bottom 5s linear, opacity 1s linear, transform 5s linear';
 
             // Random color for generic duck
             const hue = Math.floor(Math.random() * 360);
@@ -898,6 +898,7 @@
             // Trigger animation
             setTimeout(() => {
                 duckWrap.style.bottom = '60%';
+                duckWrap.style.transform = 'scale(0.3)';
             }, 100);
 
             // Fade out and remove after landing
@@ -906,7 +907,7 @@
                 setTimeout(() => {
                     duckWrap.remove();
                 }, 1000);
-            }, 5100);
+            }, 15100);
         }
 
         function spawnStreamerRaidDuck(username) {
@@ -915,9 +916,9 @@
             // Start at top for parachuting
             duckWrap.style.left = `${Math.random() * 80 + 10}%`;
             duckWrap.style.bottom = '120%';
-            duckWrap.style.transform = 'scale(0.3)';
+            duckWrap.style.transform = 'scale(1.5)';
             duckWrap.style.zIndex = ++globalZIndex;
-            duckWrap.style.transition = 'bottom 5s linear, transform 2s ease-in-out';
+            duckWrap.style.transition = 'bottom 5s linear, transform 5s linear';
 
             const finalColor = generateColorFromUsername(username);
 
@@ -955,6 +956,7 @@
             // Start parachute animation
             setTimeout(() => {
                 duckWrap.style.bottom = '60%'; // Land at horizon
+                duckWrap.style.transform = 'scale(0.3)';
             }, 100);
 
             // After landing
