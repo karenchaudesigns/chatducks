@@ -16,9 +16,10 @@ Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twit
 ## Commands
 
 ### User Commands
-- `!lurk`: Puts the user in "lurk mode" - they turn into a Lurkyduck and chill in the back corner of the pond.
+- `!lurk`: Puts the user in "lurk mode" - they turn into a Lurkyduck and chill in the back corner of the pond. (Typing the `karenc9Lurkyduck` emote also triggers this).
 - `!unlurk` / `!back` / `!bellyflop` / `!makeadramaticentrance`: Removes lurk mode, refreshes their custom duck image, and makes them swim normally again. (Talking within 5 minutes of a !lurk command also triggers this).
 - `!countdown <duration>`: Spawns a dedicated duck in the corner with a chat bubble that ticks down for the specified duration (in seconds).
+- `!hug [@username]...`: Makes your duck and the specified users' ducks swim towards each other to converse and hug. If no username is provided, hugs all active users.
 
 ### Mod/Broadcaster Commands
 - `!shoo` / `!reset`: Instantly clears the pond of all ducks and countdowns.
@@ -32,6 +33,7 @@ Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twit
 - **Emote Support**: Fully parses and displays standard Twitch emotes inside speech bubbles and action text!
 - **Subscriptions & Gifts**: Subscribing triggers confetti and dancing ducks, and gifted subs spawn an interactive gift box in the pond.
 - **Action Messages**: Messages starting with `!` (that aren't specific commands) appear as bold action text near the duck instead of inside standard speech bubbles.
+- **Raids**: When the channel is raided, a horizon animation triggers, and any new chatters will spawn from the horizon for the next 5 minutes.
 
 ## License
 The code in this repository is licensed under the **MIT License**.
