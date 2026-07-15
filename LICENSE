@@ -1,9 +1,9 @@
 The code in this repository is licensed under the MIT License (see below).
 
-ASSET EXCEPTION:
-All image files, graphics, animations, and branding assets located in the /assets directory (including but not limited to the custom duck designs) are Copyright (c) 2026 Karen Chau Designs, LLC. All rights reserved.
+ASSET LICENSE (CC BY 4.0):
+All image files, graphics, animations, and branding assets located in the /assets directory (including but not limited to the custom duck designs) are licensed under the Creative Commons Attribution 4.0 International License (CC BY 4.0).
 
-These visual assets may not be used, copied, modified, or distributed. Users of this codebase must replace these assets with their own original or appropriately licensed images before deploying or broadcasting this software.
+You are free to use, copy, modify, and distribute these assets, provided you give appropriate credit to "Karen Chau Designs, LLC" and include a link back to this repository or creator. To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/.
 
 MIT License
 

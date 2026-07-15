@@ -29,3 +29,8 @@ Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twit
 - **Replies**: When one user replies to another in Twitch chat, their ducks will temporarily swim up to each other and converse face-to-face.
 - **Directional Swimming**: Ducks now intelligently face the direction they are actively swimming.
 - **Emote Support**: Fully parses and displays standard Twitch emotes inside speech bubbles and action text!
+
+## License
+The code in this repository is licensed under the **MIT License**.
+
+The visual assets located in the `/assets` directory are licensed under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** license. You are free to use, copy, modify, and distribute these assets, provided you give appropriate credit to **Karen Chau Designs, LLC** and include a link back to this repository.
