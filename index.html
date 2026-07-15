@@ -327,6 +327,13 @@
             transform: translateY(10px) scale(0.8);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s linear;
 
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-wrap: break-word;
+            max-width: 250px;
+
             /* Animate to flip sides with the duck */
             animation: flip-action 30s infinite steps(1);
             animation-delay: var(--flip-delay, 0s);
@@ -1213,9 +1220,6 @@
          * RENDER LOGIC: Action Text
          */
         function showActionText(user, text, emotes) {
-            if (text.length > 44) {
-                text = text.substring(0, 44) + "...";
-            }
             const container = user.element.querySelector('.action-container');
 
             // Limit to 2 actions to avoid clutter
@@ -1257,9 +1261,6 @@
          * RENDER LOGIC: Speech Bubbles
          */
         function showSpeechBubble(user, text, emotes) {
-            if (text.length > 44) {
-                text = text.substring(0, 44) + "...";
-            }
             const container = user.element.querySelector('.bubble-container');
             
             // Limit to 3 bubbles
