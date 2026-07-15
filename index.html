@@ -944,6 +944,13 @@
                 return;
             }
 
+            if (textTrim === '!yay') {
+                if (tags && tags.mod) {
+                    showConfetti(4000);
+                }
+                return;
+            }
+
             if (textTrim === '!scatter') {
                 scatterDucks();
                 return;
