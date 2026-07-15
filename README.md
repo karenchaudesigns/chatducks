@@ -24,11 +24,14 @@ Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twit
 - `!shoo` / `!reset`: Instantly clears the pond of all ducks and countdowns.
 - `!clear`: Clears all current chat bubbles and action text without removing the ducks.
 - `!scatter`: Forces all active ducks to randomly reposition themselves horizontally along the pond.
+- `!yay`: Triggers a confetti party effect (requires mod permissions).
 
 ## Features
 - **Replies**: When one user replies to another in Twitch chat, their ducks will temporarily swim up to each other and converse face-to-face.
 - **Directional Swimming**: Ducks now intelligently face the direction they are actively swimming.
 - **Emote Support**: Fully parses and displays standard Twitch emotes inside speech bubbles and action text!
+- **Subscriptions & Gifts**: Subscribing triggers confetti and dancing ducks, and gifted subs spawn an interactive gift box in the pond.
+- **Action Messages**: Messages starting with `!` (that aren't specific commands) appear as bold action text near the duck instead of inside standard speech bubbles.
 
 ## License
 The code in this repository is licensed under the **MIT License**.
