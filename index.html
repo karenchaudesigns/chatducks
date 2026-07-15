@@ -1103,7 +1103,7 @@
             }
 
             if (textTrim === '!yay') {
-                if (tags && tags.mod) {
+                if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
                     showConfetti(4000);
                 }
                 return;
