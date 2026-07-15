@@ -400,6 +400,74 @@
             50% { transform: translateX(-50%) skewX(30deg); left: 35%; }
             100% { transform: translateX(-50%) skewX(-30deg); left: 65%; }
         }
+
+        /* === SUBSCRIPTIONS & GIFTS === */
+        @keyframes dance-duck {
+            0% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-15px) rotate(-15deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(-15px) rotate(15deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        .dancing .duck-swim, .dancing .duck-svg {
+            animation: none !important;
+        }
+        .dancing .duck-svg {
+            animation: dance-duck 0.5s infinite !important;
+            transform-origin: center bottom;
+        }
+
+        .confetti {
+            position: fixed;
+            top: -10px;
+            width: 10px;
+            height: 10px;
+            z-index: 9999;
+            pointer-events: none;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(110vh) rotate(720deg);
+            }
+        }
+
+        .gift-box {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            bottom: 5%;
+            z-index: 50;
+            transition: left 2s ease-in-out, bottom 2s ease-in-out, opacity 0.5s linear;
+        }
+
+        .sparkle-container {
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            top: -25%;
+            left: -25%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #FFD700;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #FFF, 0 0 20px #FFD700;
+            animation: sparkle-anim 1s infinite alternate;
+        }
+
+        @keyframes sparkle-anim {
+            0% { transform: scale(0.5); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 1; }
+        }
+
     </style>
 </head>
 <body>
@@ -520,6 +588,8 @@
         const statusMsg = document.getElementById('status-msg');
 
         let globalZIndex = 100;
+        const pendingGifts = []; // [{ username, element, timer }]
+
 
         /**
          * DYNAMIC SCRIPT LOADER WITH FALLBACKS
@@ -598,6 +668,20 @@
                 }, 500);
             }).catch(console.error);
 
+            // Listen for subscriptions and gifts
+            client.on('subscription', (channel, username, method, message, tags) => {
+                triggerSubDance();
+            });
+
+            client.on('resub', (channel, username, months, message, tags, methods) => {
+                triggerSubDance();
+            });
+
+            client.on('subgift', (channel, username, streakMonths, recipient, methods, tags) => {
+                triggerSubDance();
+                handleGiftSub(recipient);
+            });
+
             // Listen for messages
             client.on('message', (channel, tags, message, self) => {
                 if (self) return; // Ignore own automated messages if any
@@ -608,8 +692,183 @@
         /**
          * CORE STATE MANAGEMENT
          */
+
+        /**
+         * SUBSCRIPTION & GIFT LOGIC
+         */
+        function getGiftBoxSVG() {
+            return `
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                <rect x="10" y="30" width="80" height="60" fill="#E74C3C" stroke="#C0392B" stroke-width="2" rx="4"/>
+                <rect x="5" y="20" width="90" height="20" fill="#E74C3C" stroke="#C0392B" stroke-width="2" rx="2"/>
+                <rect x="40" y="20" width="20" height="70" fill="#F1C40F"/>
+                <path d="M 50 20 Q 30 0 40 10 Q 50 20 50 20" fill="#F1C40F" stroke="#F39C12" stroke-width="2"/>
+                <path d="M 50 20 Q 70 0 60 10 Q 50 20 50 20" fill="#F1C40F" stroke="#F39C12" stroke-width="2"/>
+            </svg>`;
+        }
+
+        function showConfetti(duration) {
+            const colors = ['#fce18a', '#ff726d', '#b48def', '#f4306d'];
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100vw';
+            container.style.height = '100vh';
+            container.style.pointerEvents = 'none';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+
+            const interval = setInterval(() => {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                container.appendChild(confetti);
+
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }, 50);
+
+            setTimeout(() => {
+                clearInterval(interval);
+                setTimeout(() => container.remove(), 6000); // Wait for last confetti to fall
+            }, duration);
+        }
+
+        function playSparkles(targetElement) {
+            const sparkleContainer = document.createElement('div');
+            sparkleContainer.className = 'sparkle-container';
+            for (let i = 0; i < 10; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                sparkle.style.animationDelay = Math.random() + 's';
+                sparkleContainer.appendChild(sparkle);
+            }
+            targetElement.appendChild(sparkleContainer);
+
+            setTimeout(() => {
+                sparkleContainer.remove();
+            }, 4000);
+        }
+
+        let subDanceTimer = null;
+        function triggerSubDance() {
+            showConfetti(4000);
+
+            if (subDanceTimer) clearTimeout(subDanceTimer);
+
+            activeUsers.forEach(user => {
+                if (!user.isLurking && !user.isStatic) {
+                    user.element.classList.add('dancing');
+                }
+            });
+
+            subDanceTimer = setTimeout(() => {
+                activeUsers.forEach(user => {
+                    user.element.classList.remove('dancing');
+                });
+                subDanceTimer = null;
+            }, 4000);
+        }
+
+        function scatterGifts() {
+            const gifts = pendingGifts.map(g => g.element);
+            if (gifts.length === 0) return;
+            const step = 80 / gifts.length;
+            gifts.forEach((g, i) => {
+                const targetLeft = 10 + (i * step) + (Math.random() * step * 0.5);
+                g.style.left = `${targetLeft}%`;
+            });
+        }
+
+        function handleGiftSub(recipientUsername) {
+            let user = activeUsers.get(recipientUsername);
+            if (!user) {
+                // Check case-insensitive
+                for (let [key, val] of activeUsers.entries()) {
+                    if (key.toLowerCase() === recipientUsername.toLowerCase()) {
+                        user = val;
+                        break;
+                    }
+                }
+            }
+
+            const giftBox = document.createElement('div');
+            giftBox.className = 'gift-box';
+            giftBox.innerHTML = getGiftBoxSVG();
+
+            if (user && !user.isLurking) {
+                // Duck is on screen, give it the gift
+                giftBox.style.left = '60%'; // Relative to duck wrapper
+                giftBox.style.bottom = '10%';
+                user.element.appendChild(giftBox);
+                playSparkles(user.element);
+
+                setTimeout(() => {
+                    giftBox.style.opacity = '0';
+                    setTimeout(() => giftBox.remove(), 500);
+                }, 4000);
+            } else {
+                // Duck is not here, leave gift in pond
+                giftBox.style.left = `${Math.random() * 80 + 10}%`;
+                pond.appendChild(giftBox);
+
+                const timer = setTimeout(() => {
+                    const idx = pendingGifts.findIndex(g => g.element === giftBox);
+                    if (idx > -1) {
+                        pendingGifts.splice(idx, 1);
+                        giftBox.style.opacity = '0';
+                        setTimeout(() => giftBox.remove(), 500);
+                        scatterGifts();
+                    }
+                }, 30000);
+
+                pendingGifts.push({ username: recipientUsername.toLowerCase(), element: giftBox, timer: timer });
+                scatterGifts();
+            }
+        }
+
+        function checkPendingGifts(username, userObj) {
+            const lowerUser = username.toLowerCase();
+            const giftIndex = pendingGifts.findIndex(g => g.username === lowerUser);
+
+            if (giftIndex > -1) {
+                const giftData = pendingGifts[giftIndex];
+                pendingGifts.splice(giftIndex, 1);
+                clearTimeout(giftData.timer);
+
+                userObj.isBusy = true; // Don't scatter them away
+
+                // Make user swim to the gift
+                const currentGiftLeft = parseFloat(giftData.element.style.left);
+                userObj.element.style.left = `${currentGiftLeft}%`;
+
+                setTimeout(() => {
+                    // Re-parent the gift to the duck
+                    giftData.element.style.left = '60%';
+                    giftData.element.style.bottom = '10%';
+                    userObj.element.appendChild(giftData.element);
+                    playSparkles(userObj.element);
+
+                    setTimeout(() => {
+                        giftData.element.style.opacity = '0';
+                        setTimeout(() => giftData.element.remove(), 500);
+                        userObj.isBusy = false;
+                        if (typeof scatterDucks === 'function') {
+                            scatterDucks();
+                        }
+                    }, 4000);
+                }, 2000); // 2s swim time
+            }
+        }
+
         function scatterDucks() {
-            const activeDucks = Array.from(activeUsers.values()).filter(u => !u.isLurking && !u.isStatic);
+            const activeDucks = Array.from(activeUsers.values()).filter(u => !u.isLurking && !u.isStatic && !u.isBusy);
             const count = activeDucks.length;
             if (count === 0) return;
             const step = 80 / count;
@@ -711,6 +970,7 @@
                 user.isLurking = false;
                 user.element.classList.remove("lurking");
                 user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`;
+                checkPendingGifts(username, user);
                 scatterDucks();
                 return;
             }
@@ -738,6 +998,7 @@
                     user.element.classList.remove("lurking");
                     user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`;
                     // Scatter handles repositioning later, but reset scale and let it re-animate
+                    checkPendingGifts(username, user);
                     scatterDucks();
                 } else {
                     return; // Ignore messages if they are still lurking within 5 mins
@@ -872,6 +1133,8 @@
                 isStatic: false,
                 isLurking: false
             };
+
+            checkPendingGifts(username, userObj);
 
             if (username.toLowerCase() === 'streamelements') {
                 userObj.isStatic = true;
@@ -1084,7 +1347,9 @@
             "Can you explain that again?",
             "Hello everyone!! 👋",
             "!W",
-            "Testing the overlay system, this is a much longer message to see how the text wrapping handles larger paragraphs."
+            "Testing the overlay system, this is a much longer message to see how the text wrapping handles larger paragraphs.",
+            "!sub",
+            "!giftsub"
         ];
         
         let testCounter = 1;
@@ -1107,6 +1372,17 @@
             if (message.includes("LUL")) {
                  emotes = { "425618": ["0-2"] };
             }
+            if (message.includes("!sub")) {
+                triggerSubDance();
+                return;
+            }
+            if (message.includes("!giftsub")) {
+                triggerSubDance();
+                handleGiftSub(`LuckyDuck_${testCounter}`);
+                testCounter++;
+                return;
+            }
+
             // Simulate an incoming message
             handleIncomingMessage(username, message, null, emotes);
             
