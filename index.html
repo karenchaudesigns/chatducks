@@ -297,6 +297,14 @@
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s linear;
         }
 
+        @keyframes sparkle {
+            0%, 100% { filter: drop-shadow(0 0 5px #F1C40F) drop-shadow(0 0 10px #F1C40F) drop-shadow(0 0 15px #FFF); }
+            50% { filter: drop-shadow(0 0 2px #F1C40F) drop-shadow(0 0 5px #FFF); }
+        }
+        .sparkle-effect {
+            animation: flip-duck 30s infinite linear, sparkle 1.5s infinite alternate !important;
+        }
+
         .speech-bubble-text {
             display: -webkit-box;
             -webkit-line-clamp: 3;
@@ -604,6 +612,8 @@
 
         let globalZIndex = 100;
         const pendingGifts = []; // [{ username, element, timer }]
+        let lastRaidTime = 0;
+        const RAID_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 
 
         /**
@@ -698,6 +708,10 @@
             });
 
             // Listen for messages
+                        client.on('raided', (channel, username, viewers, tags) => {
+                handleRaid(username, viewers);
+            });
+
             client.on('message', (channel, tags, message, self) => {
                 if (self) return; // Ignore own automated messages if any
                 handleIncomingMessage(tags['display-name'] || tags.username, message, tags.color, tags.emotes, tags);
@@ -848,6 +862,150 @@
             }
         }
 
+
+        /**
+         * RENDER LOGIC: Raids
+         */
+        function spawnViewerRaidDuck() {
+            const duckWrap = document.createElement('div');
+            duckWrap.className = 'duck-wrapper';
+            duckWrap.style.left = `${Math.random() * 80 + 10}%`;
+            duckWrap.style.bottom = '120%';
+            duckWrap.style.transform = 'scale(0.3)';
+            duckWrap.style.zIndex = ++globalZIndex;
+            duckWrap.style.transition = 'bottom 5s linear, opacity 1s linear';
+
+            // Random color for generic duck
+            const hue = Math.floor(Math.random() * 360);
+            const color = `hsl(${hue}, 85%, 60%)`;
+
+            duckWrap.innerHTML = `
+                <div class="duck-swim" style="animation: none !important;">
+                    <svg class="parachute-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="position: absolute; top: -80px; left: -10px; width: 100px; height: 100px;">
+                        <path d="M 10 50 Q 50 10 90 50 Z" fill="#E74C3C"/>
+                        <line x1="20" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
+                        <line x1="50" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
+                        <line x1="80" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
+                    </svg>
+                    <div class="duck-svg" style="transform: scaleX(1) !important;">
+                        ${getDuckSVG(color)}
+                    </div>
+                </div>
+            `;
+
+            pond.appendChild(duckWrap);
+
+            // Trigger animation
+            setTimeout(() => {
+                duckWrap.style.bottom = '60%';
+            }, 100);
+
+            // Fade out and remove after landing
+            setTimeout(() => {
+                duckWrap.style.opacity = '0';
+                setTimeout(() => {
+                    duckWrap.remove();
+                }, 1000);
+            }, 5100);
+        }
+
+        function spawnStreamerRaidDuck(username) {
+            const duckWrap = document.createElement('div');
+            duckWrap.className = 'duck-wrapper streamer-raid';
+            // Start at top for parachuting
+            duckWrap.style.left = `${Math.random() * 80 + 10}%`;
+            duckWrap.style.bottom = '120%';
+            duckWrap.style.transform = 'scale(0.3)';
+            duckWrap.style.zIndex = ++globalZIndex;
+            duckWrap.style.transition = 'bottom 5s linear, transform 2s ease-in-out';
+
+            const finalColor = generateColorFromUsername(username);
+
+            duckWrap.innerHTML = `
+                <div class="duck-swim" style="animation-delay: 0s;">
+                    <div class="action-container"></div>
+                    <div class="bubble-container"></div>
+                    <svg class="parachute-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="position: absolute; top: -80px; left: -10px; width: 100px; height: 100px; transition: opacity 0.5s;">
+                        <path d="M 10 50 Q 50 10 90 50 Z" fill="#F1C40F"/>
+                        <line x1="20" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
+                        <line x1="50" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
+                        <line x1="80" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
+                    </svg>
+                    <div class="duck-svg sparkle-effect">
+                        <img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}');" />
+                    </div>
+                    <div class="duck-name" style="color: ${finalColor};">${username}</div>
+                </div>
+            `;
+
+            pond.appendChild(duckWrap);
+
+            const userObj = {
+                element: duckWrap,
+                duckColor: finalColor,
+                inactivityTimer: null,
+                bubbleTimer: null,
+                bubbles: [],
+                actions: [],
+                isStatic: false,
+                isLurking: false
+            };
+            activeUsers.set(username, userObj);
+
+            // Start parachute animation
+            setTimeout(() => {
+                duckWrap.style.bottom = '60%'; // Land at horizon
+            }, 100);
+
+            // After landing
+            setTimeout(() => {
+                // Fade out parachute
+                const parachute = duckWrap.querySelector('.parachute-svg');
+                if (parachute) {
+                    parachute.style.opacity = '0';
+                    setTimeout(() => parachute.remove(), 500);
+                }
+
+                // Bring forward to pond
+                duckWrap.style.transition = 'bottom 2s ease-in-out, transform 2s ease-in-out, left 2s ease-in-out';
+                duckWrap.style.bottom = '5%';
+                duckWrap.style.transform = 'scale(1.5)';
+
+                // Add standard swimming after a short delay
+                setTimeout(() => {
+                    const swim = duckWrap.querySelector('.duck-swim');
+                    if (swim) swim.style.animation = 'swim-horizontal 30s infinite linear';
+                }, 2000);
+
+                // Remove sparkles after 30 seconds
+                setTimeout(() => {
+                    const svgContainer = duckWrap.querySelector('.duck-svg');
+                    if (svgContainer) {
+                        svgContainer.classList.remove('sparkle-effect');
+                    }
+                }, 30000);
+            }, 5100);
+
+            // Make sure inactivity timer is set
+            userObj.inactivityTimer = setTimeout(() => removeDuck(username), 600000);
+        }
+
+        function handleRaid(username, viewers) {
+            lastRaidTime = Date.now();
+
+            // Limit number of viewer ducks to avoid lag
+            const maxViewerDucks = Math.min(viewers, 50);
+
+            spawnStreamerRaidDuck(username);
+
+            // Spawn viewer ducks with a slight staggered delay
+            for (let i = 0; i < maxViewerDucks; i++) {
+                setTimeout(() => {
+                    spawnViewerRaidDuck();
+                }, Math.random() * 2000);
+            }
+        }
+
         function checkPendingGifts(username, userObj) {
             const lowerUser = username.toLowerCase();
             const giftIndex = pendingGifts.findIndex(g => g.username === lowerUser);
@@ -984,7 +1142,8 @@
 
             // 1. Spawn a new duck if they aren't active
             if (!user) {
-                user = spawnDuck(username, userColor);
+                const isRecentRaid = (Date.now() - lastRaidTime) < RAID_WINDOW_MS;
+                user = spawnDuck(username, userColor, isRecentRaid);
                 activeUsers.set(username, user);
             }
 
@@ -1106,7 +1265,7 @@
         /**
          * RENDER LOGIC: Spawning Ducks
          */
-        function spawnDuck(username, hexColor) {
+        function spawnDuck(username, hexColor, fromHorizon = false) {
             const duckWrap = document.createElement('div');
             duckWrap.className = 'duck-wrapper';
 
@@ -1131,10 +1290,15 @@
                 </div>
             `;
             
-            // Initialize duck below the pond so it peeks up on entrance
+            // Initialize duck
             duckWrap.style.left = `${Math.random() * 80 + 10}%`;
-            duckWrap.style.bottom = '-20%';
-            duckWrap.style.transform = 'scale(1.5)';
+            if (fromHorizon) {
+                duckWrap.style.bottom = '60%';
+                duckWrap.style.transform = 'scale(0.3)';
+            } else {
+                duckWrap.style.bottom = '-20%';
+                duckWrap.style.transform = 'scale(1.5)';
+            }
 
             pond.appendChild(duckWrap);
 
@@ -1143,6 +1307,10 @@
             setTimeout(() => {
                 const targetLeft = Math.random() * 80 + 10;
                 duckWrap.style.left = `${targetLeft}%`;
+                if (fromHorizon) {
+                    duckWrap.style.bottom = '5%';
+                    duckWrap.style.transform = 'scale(1.5)';
+                }
             }, 100);
 
             const userObj = {
