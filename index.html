@@ -725,6 +725,95 @@
         /**
          * SUBSCRIPTION & GIFT LOGIC
          */
+
+        function getTreatSVG() {
+            return `
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="40" fill="#D2B48C" stroke="#8B4513" stroke-width="5"/>
+                <circle cx="35" cy="40" r="8" fill="#8B4513"/>
+                <circle cx="65" cy="55" r="6" fill="#8B4513"/>
+                <circle cx="45" cy="70" r="5" fill="#8B4513"/>
+            </svg>`;
+        }
+
+        function spawnTreats() {
+            const treatsSpot = Math.random() * 60 + 20; // 20% to 80%
+
+            const treatElements = [];
+            for (let i = 0; i < 15; i++) {
+                const treat = document.createElement('div');
+                treat.className = 'treat';
+                treat.style.position = 'absolute';
+                treat.style.width = '15px';
+                treat.style.height = '15px';
+
+                const offset = (Math.random() - 0.5) * 10;
+                treat.style.left = `${treatsSpot + offset}%`;
+                treat.style.bottom = '100%';
+                treat.style.zIndex = 40;
+                treat.style.transition = 'bottom 1s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s linear';
+                treat.innerHTML = getTreatSVG();
+
+                pond.appendChild(treat);
+
+                setTimeout(() => {
+                    treat.style.bottom = `${Math.random() * 10 + 2}%`;
+                }, 50);
+
+                treatElements.push(treat);
+            }
+
+            const activeDucks = Array.from(activeUsers.values()).filter(u => !u.isLurking && !u.isStatic && !u.isBusy);
+            if (activeDucks.length === 0) {
+                setTimeout(() => {
+                    treatElements.forEach(t => {
+                        t.style.opacity = '0';
+                        setTimeout(() => t.remove(), 500);
+                    });
+                }, 5000);
+                return;
+            }
+
+            activeDucks.forEach(u => {
+                u.isBusy = true;
+                u.element.classList.add('conversing');
+            });
+
+            setTimeout(() => {
+                activeDucks.forEach((u, i) => {
+                    const offset = (Math.random() - 0.5) * 15;
+                    const pos = Math.max(5, Math.min(95, treatsSpot + offset));
+
+                    u.element.style.left = `${pos}%`;
+                    u.element.classList.remove('facing-left', 'facing-right');
+                    if (pos <= treatsSpot) {
+                        u.element.classList.add('facing-right');
+                    } else {
+                        u.element.classList.add('facing-left');
+                    }
+                });
+
+                setTimeout(() => {
+                    treatElements.forEach((t, i) => {
+                        setTimeout(() => {
+                            t.style.opacity = '0';
+                            setTimeout(() => t.remove(), 500);
+                        }, Math.random() * 1500);
+                    });
+
+                    setTimeout(() => {
+                        activeDucks.forEach(u => {
+                            u.element.classList.remove('conversing', 'facing-right', 'facing-left');
+                            u.isBusy = false;
+                        });
+                        if (typeof scatterDucks === 'function') {
+                            scatterDucks();
+                        }
+                    }, 2500);
+                }, 2000);
+            }, 100);
+        }
+
         function getGiftBoxSVG() {
             return `
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -1107,6 +1196,14 @@
             if (textTrim === '!yay') {
                 if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
                     showConfetti(4000);
+                }
+                return;
+            }
+
+
+            if (textTrim === '!treats') {
+                if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
+                    spawnTreats();
                 }
                 return;
             }
@@ -1594,6 +1691,7 @@
          * TESTING: Generate fake messages for OBS setup
          */
         const testMessages = [
+            "!treats",
             "Quack quack!",
             "!This stream is awesome! 🦆",
             "LUL",
@@ -1634,6 +1732,11 @@
                 triggerSubDance();
                 handleGiftSub(`LuckyDuck_${testCounter}`);
                 testCounter++;
+                return;
+            }
+
+            if (message.includes("!treats")) {
+                handleIncomingMessage(username, message, null, null, { mod: true });
                 return;
             }
 
