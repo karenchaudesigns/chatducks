@@ -208,7 +208,7 @@
             /* Exit transitions (slow drift backwards) */
             transform: scale(0) !important;
             bottom: 90% !important;
-            transition: transform 600s linear, bottom 600s linear;
+            transition: transform 600s linear, bottom 600s linear, left 2s ease-in-out;
         }
 
         .duck-swim {
@@ -962,7 +962,7 @@
             duckWrap.style.bottom = '120%';
             duckWrap.style.transform = 'scale(1.5)';
             duckWrap.style.zIndex = ++globalZIndex;
-            duckWrap.style.transition = 'bottom 5s linear, opacity 1s linear, transform 5s linear';
+            duckWrap.style.transition = 'bottom 5s linear, opacity 1s linear, transform 5s linear, left 2s ease-in-out';
 
             // Random color for generic duck
             const hue = Math.floor(Math.random() * 360);
@@ -1007,7 +1007,7 @@
             duckWrap.style.bottom = '120%';
             duckWrap.style.transform = 'scale(1.5)';
             duckWrap.style.zIndex = ++globalZIndex;
-            duckWrap.style.transition = 'bottom 5s linear, transform 5s linear';
+            duckWrap.style.transition = 'bottom 5s linear, transform 5s linear, left 2s ease-in-out';
 
             const finalColor = generateColorFromUsername(username);
 
