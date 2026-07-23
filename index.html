@@ -1058,10 +1058,9 @@
                     setTimeout(() => parachute.remove(), 500);
                 }
 
-                // Bring forward to pond
+                // Reset transition to CSS default, and start drifting away
                 duckWrap.style.transition = '';
-                duckWrap.style.bottom = '5%';
-                duckWrap.style.transform = 'scale(1.5)';
+                duckWrap.classList.add('leaving');
 
                 // Add standard swimming after a short delay
                 setTimeout(() => {
