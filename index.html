@@ -1209,6 +1209,29 @@
                 return;
             }
 
+            if (textTrim === '!testraid') {
+                if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
+                    for (let i = 1; i <= 10; i++) {
+                        setTimeout(() => {
+                            spawnStreamerRaidDuck(`Test${i}`);
+                        }, Math.random() * 2000);
+                    }
+                    // Wait for ducks to land and come forward
+                    setTimeout(() => {
+                        handleIncomingMessage("Test1", "Quack", null, null, {});
+                        setTimeout(() => handleIncomingMessage("Test2", "testing", null, null, {}), 500);
+                        setTimeout(() => handleIncomingMessage("Test3", "testing", null, null, {}), 1000);
+                        setTimeout(() => handleIncomingMessage("Test4", "testing", null, null, {}), 1500);
+                        
+                        // Follow-up messages
+                        setTimeout(() => handleIncomingMessage("Test1", "1", null, null, {}), 2500);
+                        setTimeout(() => handleIncomingMessage("Test2", "2", null, null, {}), 3000);
+                        setTimeout(() => handleIncomingMessage("Test3", "3", null, null, {}), 3500);
+                    }, 6000);
+                }
+                return;
+            }
+
             if (textTrim === '!scatter') {
                 scatterDucks();
                 return;
