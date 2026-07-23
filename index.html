@@ -507,6 +507,7 @@
             </div>
             
             <button class="btn-secondary" onclick="spawnTestMessage()">🧪 Send Test Message</button>
+            <button class="btn-secondary" onclick="simulateRaid()">⚔️ Simulate Raid</button>
             
             <div id="status-msg">Connecting...</div>
 
@@ -1058,7 +1059,7 @@
                 }
 
                 // Bring forward to pond
-                duckWrap.style.transition = 'bottom 2s ease-in-out, transform 2s ease-in-out, left 2s ease-in-out';
+                duckWrap.style.transition = '';
                 duckWrap.style.bottom = '5%';
                 duckWrap.style.transform = 'scale(1.5)';
 
@@ -1296,6 +1297,7 @@
 
             // Bring them to the front (fast entrance animation triggers here)
             if (!user.isStatic) {
+                user.element.style.transition = '';
                 user.element.style.bottom = '5%';
                 user.element.style.transform = 'scale(1.5)';
             }
@@ -1745,6 +1747,22 @@
             
             testCounter++;
             if (testCounter > 10) testCounter = 1;
+        }
+
+        function simulateRaid() {
+            // Close the modal to show the ducks
+            if (setupModal.style.display !== 'none') {
+                setupModal.style.opacity = '0';
+                setTimeout(() => setupModal.style.display = 'none', 500);
+            }
+
+            const raiderName = "RaiderKing";
+            handleRaid(raiderName, 15);
+
+            // Wait 6 seconds for them to land and come forward, then make them talk
+            setTimeout(() => {
+                handleIncomingMessage(raiderName, "We have arrived! Quack!", null, null);
+            }, 6000);
         }
 
     </script>
