@@ -22,6 +22,7 @@ Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twit
 - `!hug [@username]...`: Makes your duck and the specified users' ducks swim towards each other to converse and hug. If no username is provided, hugs all active users.
 
 ### Mod/Broadcaster Commands
+- `!testlurk [username]`: Simulates a lurking duck in the pond (mod/broadcaster only).
 - `!treats`: Randomly sprinkles treats in one section of the pond, and all active ducks will hurry to eat them.
 - `!shoo` / `!reset`: Instantly clears the pond of all ducks and countdowns.
 - `!clear`: Clears all current chat bubbles and action text without removing the ducks.

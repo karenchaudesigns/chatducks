@@ -507,6 +507,7 @@
             </div>
             
             <button class="btn-secondary" onclick="spawnTestMessage()">🧪 Send Test Message</button>
+            <button class="btn-secondary" onclick="simulateTestLurk()">🥷 Simulate Lurk</button>
             <button class="btn-secondary" onclick="simulateRaid()">⚔️ Simulate Raid</button>
             
             <div id="status-msg">Connecting...</div>
@@ -1231,6 +1232,17 @@
                 return;
             }
 
+            if (textTrim === '!testlurk' || textTrim.startsWith('!testlurk ')) {
+                if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
+                    const args = textTrim.split(/\s+/);
+                    const targetName = args[1] ? args[1] : `TestLurker_${testCounter++}`;
+                    if (testCounter > 10) testCounter = 1;
+                    
+                    handleIncomingMessage(targetName, "!lurk", null, null, tags);
+                }
+                return;
+            }
+
             if (textTrim === '!scatter') {
                 scatterDucks();
                 return;
@@ -1716,6 +1728,7 @@
          */
         const testMessages = [
             "!treats",
+            "!testlurk",
             "Quack quack!",
             "!This stream is awesome! 🦆",
             "LUL",
@@ -1759,7 +1772,7 @@
                 return;
             }
 
-            if (message.includes("!treats")) {
+            if (message.includes("!treats") || message.includes("!testlurk")) {
                 handleIncomingMessage(username, message, null, null, { mod: true });
                 return;
             }
@@ -1785,6 +1798,18 @@
             setTimeout(() => {
                 handleIncomingMessage(raiderName, "We have arrived! Quack!", null, null);
             }, 6000);
+        }
+
+        function simulateTestLurk() {
+            if (setupModal.style.display !== 'none') {
+                setupModal.style.opacity = '0';
+                setTimeout(() => setupModal.style.display = 'none', 500);
+            }
+
+            const username = `TestMod_${testCounter}`;
+            handleIncomingMessage(username, "!testlurk", null, null, { mod: true });
+            testCounter++;
+            if (testCounter > 10) testCounter = 1;
         }
 
     </script>
