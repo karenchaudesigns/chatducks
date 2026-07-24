@@ -1563,13 +1563,20 @@
         /**
          * RENDER LOGIC: Emotes parsing
          */
+        const htmlEscapes = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        const reUnescapedHtml = /[&<>"']/g;
+        const reHasUnescapedHtml = RegExp(reUnescapedHtml.source);
+
         function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+            return (unsafe && reHasUnescapedHtml.test(unsafe))
+                ? unsafe.replace(reUnescapedHtml, (chr) => htmlEscapes[chr])
+                : unsafe;
         }
 
         function parseEmotes(text, emotes) {
@@ -1577,21 +1584,32 @@
 
             let replacements = [];
             for (const emoteId in emotes) {
-                emotes[emoteId].forEach(pos => {
-                    const [start, end] = pos.split('-').map(Number);
-                    replacements.push({ start, end, emoteId });
-                });
+                const positions = emotes[emoteId];
+                for (let i = 0; i < positions.length; i++) {
+                    const pos = positions[i];
+                    const dashIdx = pos.indexOf('-');
+                    replacements.push({
+                        start: parseInt(pos.substring(0, dashIdx), 10),
+                        end: parseInt(pos.substring(dashIdx + 1), 10),
+                        emoteId: emoteId
+                    });
+                }
             }
             replacements.sort((a, b) => a.start - b.start);
 
             let formatted = "";
             let lastEnd = 0;
-            for (const r of replacements) {
-                formatted += escapeHtml(text.substring(lastEnd, r.start));
+            for (let i = 0; i < replacements.length; i++) {
+                const r = replacements[i];
+                if (r.start > lastEnd) {
+                    formatted += escapeHtml(text.substring(lastEnd, r.start));
+                }
                 formatted += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${r.emoteId}/default/dark/1.0" class="emote" style="vertical-align: middle; height: 2em;" />`;
                 lastEnd = r.end + 1;
             }
-            formatted += escapeHtml(text.substring(lastEnd));
+            if (lastEnd < text.length) {
+                formatted += escapeHtml(text.substring(lastEnd));
+            }
             return formatted;
         }
 
