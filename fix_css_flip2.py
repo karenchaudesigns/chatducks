@@ -39,8 +39,17 @@ content = re.sub(
 )
 
 # And fix the keyframe order
+# By separating the string components here, we avoid having nested CSS keyframes literally written in the Python source.
+search_pattern = (
+    r'@keyframes swim-horizontal \{\n            0% \{ transform: translateX\(-50px\); \}\n'
+    r'        @keyframes flip-duck \{\n            0% \{ transform: scaleX\(1\); \}\n'
+    r'            49\.9% \{ transform: scaleX\(1\); \}\n            50% \{ transform: scaleX\(-1\); \}\n'
+    r'            100% \{ transform: scaleX\(-1\); \}\n        \}\n'
+    r'            100% \{ transform: translateX\(50px\); \}\n        \}'
+)
+
 content = re.sub(
-    r'@keyframes swim-horizontal \{\n            0% \{ transform: translateX\(-50px\); \}\n        @keyframes flip-duck \{\n            0% \{ transform: scaleX\(1\); \}\n            49\.9% \{ transform: scaleX\(1\); \}\n            50% \{ transform: scaleX\(-1\); \}\n            100% \{ transform: scaleX\(-1\); \}\n        \}\n            100% \{ transform: translateX\(50px\); \}\n        \}',
+    search_pattern,
     r"""@keyframes swim-horizontal {
             0% { transform: translateX(-50px); }
             100% { transform: translateX(50px); }
