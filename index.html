@@ -1357,15 +1357,21 @@
                 }
 
                 if (args.length > 0) {
+                    let lowerCaseActiveUsers = null;
                     for (let arg of args) {
                         let targetName = arg.startsWith('@') ? arg.substring(1) : arg;
-                        let targetUser = null;
-                        for (let [k, v] of activeUsers.entries()) {
-                            if (k.toLowerCase() === targetName.toLowerCase()) {
-                                targetUser = v;
-                                break;
+                        let targetUser = activeUsers.get(targetName);
+
+                        if (!targetUser) {
+                            if (!lowerCaseActiveUsers) {
+                                lowerCaseActiveUsers = new Map();
+                                for (let [k, v] of activeUsers.entries()) {
+                                    lowerCaseActiveUsers.set(k.toLowerCase(), v);
+                                }
                             }
+                            targetUser = lowerCaseActiveUsers.get(targetName.toLowerCase());
                         }
+
                         if (targetUser && !targetUser.isLurking && !targetUser.isStatic && !targetUser.isBusy) {
                             participants.add(targetUser);
                         }
