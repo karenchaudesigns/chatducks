@@ -1143,8 +1143,7 @@
             });
         }
 
-        function handleIncomingMessage(username, text, userColor, emotes, tags) {
-            let textTrim = text.trim();
+        function handleGlobalCommands(username, textTrim, tags) {
             if (textTrim.startsWith('!countdown ')) {
                 const duration = parseInt(textTrim.split(' ')[1]);
                 if (!isNaN(duration) && duration > 0) {
@@ -1191,22 +1190,21 @@
                         }
                     }, 1000);
                 }
-                return;
+                return true;
             }
 
             if (textTrim === '!yay') {
                 if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
                     showConfetti(4000);
                 }
-                return;
+                return true;
             }
-
 
             if (textTrim === '!treats') {
                 if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
                     spawnTreats();
                 }
-                return;
+                return true;
             }
 
             if (textTrim === '!testraid') {
@@ -1229,7 +1227,7 @@
                         setTimeout(() => handleIncomingMessage("Test3", "3", null, null, {}), 3500);
                     }, 6000);
                 }
-                return;
+                return true;
             }
 
             if (textTrim === '!testlurk' || textTrim.startsWith('!testlurk ')) {
@@ -1240,12 +1238,12 @@
                     
                     handleIncomingMessage(targetName, "!lurk", null, null, tags);
                 }
-                return;
+                return true;
             }
 
             if (textTrim === '!scatter') {
                 scatterDucks();
-                return;
+                return true;
             }
             if (textTrim === '!shoo' || textTrim === '!reset') {
                 if (tags && (tags.mod || tags.subscriber || (tags.badges && tags.badges.vip))) {
@@ -1254,7 +1252,7 @@
                     // Remove countdown ducks
                     document.querySelectorAll('.countdown-duck').forEach(el => el.remove());
                 }
-                return;
+                return true;
             }
 
             if (textTrim === '!clear') {
@@ -1266,28 +1264,20 @@
                         u.actions = [];
                     });
                 }
-                return;
+                return true;
             }
 
+            return false;
+        }
 
-            let user = activeUsers.get(username);
-
-
-
-            // 1. Spawn a new duck if they aren't active
-            if (!user) {
-                const isRecentRaid = (Date.now() - lastRaidTime) < RAID_WINDOW_MS;
-                user = spawnDuck(username, userColor, isRecentRaid);
-                activeUsers.set(username, user);
-            }
-
+        function handleLurkState(username, user, textTrim, text, emotes) {
             if (['!back', '!unlurk', '!bellyflop', '!makeadramaticentrance'].includes(textTrim)) {
                 user.isLurking = false;
                 user.element.classList.remove("lurking");
                 user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`;
                 checkPendingGifts(username, user);
                 scatterDucks();
-                return;
+                return true;
             }
 
             // LURK AND UNLURK SYSTEM
@@ -1304,7 +1294,7 @@
                 user.element.style.left = Math.random() > 0.5 ? '5%' : '95%';
                 user.element.classList.add("lurking");
                 clearTimeout(user.inactivityTimer);
-                return; // Stop processing further for lurk
+                return true; // Stop processing further for lurk
             }
 
             if (user.isLurking) {
@@ -1316,10 +1306,14 @@
                     checkPendingGifts(username, user);
                     scatterDucks();
                 } else {
-                    return; // Ignore messages if they are still lurking within 5 mins
+                    return true; // Ignore messages if they are still lurking within 5 mins
                 }
             }
 
+            return false;
+        }
+
+        function updateDuckActivity(username, user) {
             globalZIndex++;
             user.element.style.zIndex = globalZIndex;
 
@@ -1347,7 +1341,9 @@
             }
 
             user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
+        }
 
+        function handleDuckInteractions(user, textTrim, tags) {
             // HUG LOGIC
             if (textTrim.startsWith('!hug')) {
                 let args = textTrim.split(/\s+/).slice(1);
@@ -1457,6 +1453,31 @@
                     }, 15000); // Talk for 15 seconds then scatter
                 }
             }
+        }
+
+        function handleIncomingMessage(username, text, userColor, emotes, tags) {
+            let textTrim = text.trim();
+
+            if (handleGlobalCommands(username, textTrim, tags)) {
+                return;
+            }
+
+            let user = activeUsers.get(username);
+
+            // 1. Spawn a new duck if they aren't active
+            if (!user) {
+                const isRecentRaid = (Date.now() - lastRaidTime) < RAID_WINDOW_MS;
+                user = spawnDuck(username, userColor, isRecentRaid);
+                activeUsers.set(username, user);
+            }
+
+            if (handleLurkState(username, user, textTrim, text, emotes)) {
+                return;
+            }
+
+            updateDuckActivity(username, user);
+
+            handleDuckInteractions(user, textTrim, tags);
 
             // 3. Display the chat message
             if (text.startsWith('!')) {
@@ -1465,6 +1486,7 @@
                 showSpeechBubble(user, text, emotes);
             }
         }
+
 
         /**
          * RENDER LOGIC: Spawning Ducks
