@@ -1002,6 +1002,8 @@
         }
 
         function spawnStreamerRaidDuck(username) {
+            const safeUsername = escapeHtml(username);
+            const encUsername = encodeURIComponent(username);
             const duckWrap = document.createElement('div');
             duckWrap.className = 'duck-wrapper streamer-raid';
             // Start at top for parachuting
@@ -1024,9 +1026,9 @@
                         <line x1="80" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
                     </svg>
                     <div class="duck-svg sparkle-effect">
-                        <img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}');" />
+                        <img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}');" />
                     </div>
-                    <div class="duck-name" style="color: ${finalColor};">${username}</div>
+                    <div class="duck-name" style="color: ${finalColor};">${safeUsername}</div>
                 </div>
             `;
 
@@ -1148,6 +1150,9 @@
             if (textTrim.startsWith('!countdown ')) {
                 const duration = parseInt(textTrim.split(' ')[1]);
                 if (!isNaN(duration) && duration > 0) {
+                    const safeUsername = escapeHtml(username);
+                    const encUsername = encodeURIComponent(username);
+                    const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
                     const duckWrap = document.createElement('div');
                     duckWrap.className = 'duck-wrapper countdown-duck';
                     duckWrap.style.left = '5%';
@@ -1161,9 +1166,9 @@
                         <div class="duck-swim" style="animation: none !important;">
                             <div class="bubble-container"></div>
                             <div class="duck-svg" style="transform: scaleX(1) !important;">
-                                <img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />
+                                <img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />
                             </div>
-                            <div class="duck-name" style="color: ${finalColor};">Countdown for ${username}</div>
+                            <div class="duck-name" style="color: ${finalColor};">Countdown for ${safeUsername}</div>
                         </div>
                     `;
                     pond.appendChild(duckWrap);
@@ -1282,9 +1287,12 @@
             }
 
             if (['!back', '!unlurk', '!bellyflop', '!makeadramaticentrance'].includes(textTrim)) {
+                const safeUsername = escapeHtml(username);
+                const encUsername = encodeURIComponent(username);
+                const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
                 user.isLurking = false;
                 user.element.classList.remove("lurking");
-                user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`;
+                user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />`;
                 checkPendingGifts(username, user);
                 scatterDucks();
                 return;
@@ -1309,9 +1317,12 @@
 
             if (user.isLurking) {
                 if (Date.now() - user.lurkTime > 300000) {
+                    const safeUsername = escapeHtml(username);
+                    const encUsername = encodeURIComponent(username);
+                    const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
                     user.isLurking = false;
                     user.element.classList.remove("lurking");
-                    user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />`;
+                    user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />`;
                     // Scatter handles repositioning later, but reset scale and let it re-animate
                     checkPendingGifts(username, user);
                     scatterDucks();
@@ -1476,6 +1487,10 @@
          * RENDER LOGIC: Spawning Ducks
          */
         function spawnDuck(username, hexColor, fromHorizon = false) {
+            const safeUsername = escapeHtml(username);
+            const encUsername = encodeURIComponent(username);
+            const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
+
             const duckWrap = document.createElement('div');
             duckWrap.className = 'duck-wrapper';
 
@@ -1494,9 +1509,9 @@
                     <div class="action-container"></div>
                     <div class="bubble-container"></div>
                     <div class="duck-svg">
-                        <img src="assets/custom_ducks/${username}.png" alt="${username}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${username}'.toLowerCase() + '.png';" />
+                        <img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />
                     </div>
-                    <div class="duck-name" style="color: ${finalColor};">${username}</div>
+                    <div class="duck-name" style="color: ${finalColor};">${safeUsername}</div>
                 </div>
             `;
             
