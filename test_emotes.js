@@ -39,8 +39,22 @@ const escapeHtmlFnStr = extractFunction(htmlContent, 'escapeHtml');
 const parseEmotesFnStr = extractFunction(htmlContent, 'parseEmotes');
 
 // Evaluate the functions into the current scope
-eval(escapeHtmlFnStr);
-eval(parseEmotesFnStr);
+
+const htmlEscapesStr = `
+const htmlEscapes = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+};
+const reUnescapedHtml = /[&<>"']/g;
+const reHasUnescapedHtml = RegExp(reUnescapedHtml.source);
+`;
+
+const parseEmotesSource = htmlEscapesStr + '\n' + escapeHtmlFnStr + '\n' + parseEmotesFnStr + '\nreturn parseEmotes(text, emotes);';
+const parseEmotes = new Function('text', 'emotes', parseEmotesSource);
+
 
 // Now we can test the dynamically loaded parseEmotes function
 
@@ -114,7 +128,7 @@ const overlappingResult = parseEmotes("abcdef", { "1": ["0-4", "2-5"] });
 
 assert.strictEqual(
     parseEmotes("abcdef", { "1": ["0-4", "2-5"] }),
-    "<img src=\"https://static-cdn.jtvnw.net/emoticons/v2/1/default/dark/1.0\" class=\"emote\" style=\"vertical-align: middle; height: 2em;\" />cde<img src=\"https://static-cdn.jtvnw.net/emoticons/v2/1/default/dark/1.0\" class=\"emote\" style=\"vertical-align: middle; height: 2em;\" />"
+    "<img src=\"https://static-cdn.jtvnw.net/emoticons/v2/1/default/dark/1.0\" class=\"emote\" style=\"vertical-align: middle; height: 2em;\" /><img src=\"https://static-cdn.jtvnw.net/emoticons/v2/1/default/dark/1.0\" class=\"emote\" style=\"vertical-align: middle; height: 2em;\" />"
 );
 
 

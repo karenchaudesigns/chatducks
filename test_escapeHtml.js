@@ -14,7 +14,20 @@ if (!match) {
 }
 
 // Create the function using the extracted body
-const escapeHtml = new Function('unsafe', match[1]);
+
+// Create the function using the extracted body but inject the dependencies
+const escapeHtml = new Function('unsafe', `
+const htmlEscapes = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+};
+const reUnescapedHtml = /[&<>"']/g;
+const reHasUnescapedHtml = RegExp(reUnescapedHtml.source);
+` + match[1]);
+
 
 console.log("Running tests for escapeHtml...");
 
