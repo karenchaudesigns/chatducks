@@ -9,6 +9,15 @@ A fun, interactive chat overlay for Twitch that spawns a swimming duck for each 
 3. Set the dimensions (e.g., 1920x1080) to cover your screen or specific area.
 4. Check "Allow background transparency".
 
+## Project Structure
+
+- `index.html` - The core application entry point containing UI overlay, styles, and animation logic.
+- `tmi.min.js` - Twitch Messaging Interface library dependency.
+- `assets/` - Visual assets including default duck graphics, pond backgrounds, fonts, and audio files.
+  - `assets/custom_ducks/` - Custom duck images matching Twitch usernames.
+- `test_*.js` - Unit test suites for core logic (emotes, HTML escaping, color generation, regex matching).
+- `benchmark.js` - Performance testing suite for emote parsing and user lookups.
+
 ## Custom Ducks
 You can give users specific custom ducks (instead of the dynamically generated colored SVGs).
 Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twitch username. The system is case-insensitive, so both `TechJeeper.png` and `techjeeper.png` will work.
@@ -17,7 +26,7 @@ Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twit
 
 ### User Commands
 - `!lurk`: Puts the user in "lurk mode" - they turn into a Lurkyduck and chill in the back corner of the pond. (Typing the `karenc9Lurkyduck` emote also triggers this).
-- `!unlurk` / `!back` / `!bellyflop` / `!makeadramaticentrance`: Removes lurk mode, refreshes their custom duck image, and makes them swim normally again. (Talking within 5 minutes of a !lurk command also triggers this).
+- `!unlurk` / `!back` / `!bellyflop` / `!makeadramaticentrance`: Removes lurk mode, refreshes their custom duck image, and makes them swim normally again. (Talking within 5 minutes of a `!lurk` command also triggers this).
 - `!countdown <duration>`: Spawns a dedicated duck in the corner with a chat bubble that ticks down for the specified duration (in seconds).
 - `!hug [@username]...`: Makes your duck and the specified users' ducks swim towards each other to converse and hug. If no username is provided, hugs all active users.
 
@@ -31,11 +40,27 @@ Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twit
 
 ## Features
 - **Replies**: When one user replies to another in Twitch chat, their ducks will temporarily swim up to each other and converse face-to-face.
-- **Directional Swimming**: Ducks now intelligently face the direction they are actively swimming.
-- **Emote Support**: Fully parses and displays standard Twitch emotes inside speech bubbles and action text!
+- **Directional Swimming**: Ducks intelligently face the direction they are actively swimming without mirroring text.
+- **Emote Support**: Fully parses and displays standard Twitch emotes inside speech bubbles and action text.
+- **XSS Protection**: Robust HTML escaping (`escapeHtml`) prevents script injection via user chat inputs.
 - **Subscriptions & Gifts**: Subscribing triggers confetti and dancing ducks, and gifted subs spawn an interactive gift box in the pond.
 - **Action Messages**: Messages starting with `!` (that aren't specific commands) appear as bold action text near the duck instead of inside standard speech bubbles.
 - **Raids**: When the channel is raided, a horizon animation triggers, and any new chatters will spawn from the horizon for the next 5 minutes.
+
+## Testing & Benchmarks
+
+The repository includes Node.js unit tests and performance benchmarks to ensure stability and high performance:
+
+```bash
+# Run unit tests
+node test_emotes.js
+node test_escapeHtml.js
+node test_generateColorFromUsername.js
+node test_regex.js
+
+# Run performance benchmarks
+node benchmark.js
+```
 
 ## License
 The code in this repository is licensed under the **MIT License**.
