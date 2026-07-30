@@ -961,10 +961,10 @@
             const duckWrap = document.createElement('div');
             duckWrap.className = 'duck-wrapper';
             duckWrap.style.left = `${Math.random() * 80 + 10}%`;
-            duckWrap.style.bottom = '120%';
+            duckWrap.style.bottom = '100vh';
             duckWrap.style.transform = 'scale(1.5)';
             duckWrap.style.zIndex = ++globalZIndex;
-            duckWrap.style.transition = 'bottom 5s linear, opacity 1s linear, transform 5s linear, left 2s ease-in-out';
+            duckWrap.style.transition = 'bottom 15s linear, opacity 1s linear, transform 15s linear, left 2s ease-in-out';
 
             // Random color for generic duck
             const hue = Math.floor(Math.random() * 360);
@@ -998,7 +998,7 @@
                 setTimeout(() => {
                     duckWrap.remove();
                 }, 1000);
-            }, 15100);
+            }, 25100);
         }
 
         function spawnStreamerRaidDuck(username) {
@@ -1008,10 +1008,10 @@
             duckWrap.className = 'duck-wrapper streamer-raid';
             // Start at top for parachuting
             duckWrap.style.left = `${Math.random() * 80 + 10}%`;
-            duckWrap.style.bottom = '120%';
+            duckWrap.style.bottom = '100vh';
             duckWrap.style.transform = 'scale(1.5)';
             duckWrap.style.zIndex = ++globalZIndex;
-            duckWrap.style.transition = 'bottom 5s linear, transform 5s linear, left 2s ease-in-out';
+            duckWrap.style.transition = 'bottom 15s linear, transform 15s linear, left 2s ease-in-out';
 
             const finalColor = generateColorFromUsername(username);
 
@@ -1077,7 +1077,7 @@
                         svgContainer.classList.remove('sparkle-effect');
                     }
                 }, 30000);
-            }, 5100);
+            }, 15100);
 
             // Make sure inactivity timer is set
             userObj.inactivityTimer = setTimeout(() => removeDuck(username), 600000);
