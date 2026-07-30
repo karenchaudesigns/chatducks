@@ -765,7 +765,7 @@
                 treatElements.push(treat);
             }
 
-            const activeDucks = Array.from(activeUsers.values()).filter(u => !u.isLurking && !u.isStatic && !u.isBusy);
+            const activeDucks = Array.from(activeUsers.values()).filter(u => !u.isLurking && !u.isBusy);
             if (activeDucks.length === 0) {
                 setTimeout(() => {
                     treatElements.forEach(t => {
@@ -883,7 +883,7 @@
             if (subDanceTimer) clearTimeout(subDanceTimer);
 
             activeUsers.forEach(user => {
-                if (!user.isLurking && !user.isStatic) {
+                if (!user.isLurking) {
                     user.element.classList.add('dancing');
                 }
             });
@@ -1041,7 +1041,6 @@
                 bubbleTimer: null,
                 bubbles: [],
                 actions: [],
-                isStatic: false,
                 isLurking: false
             };
             activeUsers.set(username, userObj);
@@ -1135,7 +1134,7 @@
         }
 
         function scatterDucks() {
-            const activeDucks = Array.from(activeUsers.values()).filter(u => !u.isLurking && !u.isStatic && !u.isBusy);
+            const activeDucks = Array.from(activeUsers.values()).filter(u => !u.isLurking && !u.isBusy);
             const count = activeDucks.length;
             if (count === 0) return;
             const step = 80 / count;
@@ -1335,21 +1334,17 @@
             void user.element.offsetWidth;
 
             // Bring them to the front (fast entrance animation triggers here)
-            if (!user.isStatic) {
-                user.element.style.transition = '';
-                user.element.style.bottom = '5%';
-                user.element.style.transform = 'scale(1.5)';
-            }
+            user.element.style.transition = '';
+            user.element.style.bottom = '5%';
+            user.element.style.transform = 'scale(1.5)';
 
             // 2. Reset their inactivity timer
             clearTimeout(user.inactivityTimer);
 
             // Wait 2 seconds for the entrance animation to finish, then start the slow drift back
-            if (!user.isStatic) {
-                setTimeout(() => {
-                    user.element.classList.add('leaving');
-                }, 2000);
-            }
+            setTimeout(() => {
+                user.element.classList.add('leaving');
+            }, 2000);
 
             user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
         }
@@ -1359,7 +1354,7 @@
             if (textTrim.startsWith('!hug')) {
                 let args = textTrim.split(/\s+/).slice(1);
                 let participants = new Set();
-                if (!user.isStatic && !user.isLurking) {
+                if (!user.isLurking) {
                     participants.add(user);
                 }
 
@@ -1379,13 +1374,13 @@
                             targetUser = lowerCaseActiveUsers.get(targetName.toLowerCase());
                         }
 
-                        if (targetUser && !targetUser.isLurking && !targetUser.isStatic && !targetUser.isBusy) {
+                        if (targetUser && !targetUser.isLurking && !targetUser.isBusy) {
                             participants.add(targetUser);
                         }
                     }
                 } else {
                     activeUsers.forEach(u => {
-                        if (!u.isLurking && !u.isStatic && !u.isBusy) {
+                        if (!u.isLurking && !u.isBusy) {
                             participants.add(u);
                         }
                     });
@@ -1444,7 +1439,7 @@
                     }
                 }
 
-                if (parentUser && !parentUser.isLurking && !parentUser.isStatic && !user.isStatic) {
+                if (parentUser && !parentUser.isLurking) {
                     // Calculate meeting point
                     const meetingPoint = Math.random() * 60 + 20; // Between 20% and 80%
 
@@ -1567,26 +1562,16 @@
                 bubbleTimer: null,
                 bubbles: [],
                 actions: [],
-                isStatic: false,
                 isLurking: false
             };
 
             checkPendingGifts(username, userObj);
 
-            if (username.toLowerCase() === 'streamelements') {
-                userObj.isStatic = true;
-                setTimeout(() => {
-                    duckWrap.style.left = '85%';
-                    duckWrap.style.bottom = '90%';
-                    duckWrap.style.transform = 'scale(0.6)';
-                }, 150);
-            } else {
-                setTimeout(() => {
-                    if (typeof scatterDucks === 'function') {
-                        scatterDucks();
-                    }
-                }, 150);
-            }
+            setTimeout(() => {
+                if (typeof scatterDucks === 'function') {
+                    scatterDucks();
+                }
+            }, 150);
 
             return userObj;
         }
