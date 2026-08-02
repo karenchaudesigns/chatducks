@@ -20,14 +20,17 @@ Place a `.png` file inside the `assets/custom_ducks/` folder matching their Twit
 - `!unlurk` / `!back` / `!bellyflop` / `!makeadramaticentrance`: Removes lurk mode, refreshes their custom duck image, and makes them swim normally again. (Talking within 5 minutes of a !lurk command also triggers this).
 - `!countdown <duration>`: Spawns a dedicated duck in the corner with a chat bubble that ticks down for the specified duration (in seconds).
 - `!hug [@username]...`: Makes your duck and the specified users' ducks swim towards each other to converse and hug. If no username is provided, hugs all active users.
+- `!scatter`: Forces all active ducks to randomly reposition themselves horizontally along the pond.
 
-### Mod/Broadcaster Commands
-- `!testlurk [username]`: Simulates a lurking duck in the pond (mod/broadcaster only).
-- `!treats`: Randomly sprinkles treats in one section of the pond, and all active ducks will hurry to eat them.
+### Mod/VIP/Subscriber Commands
 - `!shoo` / `!reset`: Instantly clears the pond of all ducks and countdowns.
 - `!clear`: Clears all current chat bubbles and action text without removing the ducks.
-- `!scatter`: Forces all active ducks to randomly reposition themselves horizontally along the pond.
-- `!yay`: Triggers a confetti party effect (requires mod permissions).
+
+### Mod/Broadcaster Commands
+- `!testlurk [username]`: Simulates a lurking duck in the pond.
+- `!testraid`: Simulates a raid of ducks landing in the pond.
+- `!treats`: Randomly sprinkles treats in one section of the pond, and all active ducks will hurry to eat them.
+- `!yay`: Triggers a confetti party effect.
 
 ## Features
 - **Replies**: When one user replies to another in Twitch chat, their ducks will temporarily swim up to each other and converse face-to-face.
