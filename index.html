@@ -310,13 +310,13 @@
         }
 
         .speech-bubble-text.ticker {
-            animation: ticker-scroll var(--scroll-duration) linear infinite alternate;
+            animation: ticker-scroll var(--scroll-duration) linear infinite;
             animation-delay: 1s;
         }
 
         @keyframes ticker-scroll {
             0%, 10% { transform: translateX(0); }
-            90%, 100% { transform: translateX(calc(var(--scroll-dist) * -1)); }
+            100% { transform: translateX(calc(var(--scroll-dist) * -1)); }
         }
 
         .action-container {
@@ -1763,7 +1763,12 @@
             const scrollW = textEl.scrollWidth;
             const availableW = bubbleEl.clientWidth - 24; // approx 12px padding on each side
             if (scrollW > availableW) {
-                const scrollDist = scrollW - availableW;
+                const originalHTML = textEl.innerHTML;
+                const spacerWidth = 50;
+                const spacer = `<span style="display:inline-block; width: ${spacerWidth}px;"></span>`;
+                textEl.innerHTML = originalHTML + spacer + originalHTML;
+
+                const scrollDist = scrollW + spacerWidth;
                 textEl.style.setProperty('--scroll-dist', scrollDist + 'px');
                 textEl.style.setProperty('--scroll-duration', (scrollDist / 30) + 's');
                 textEl.classList.add('ticker');
