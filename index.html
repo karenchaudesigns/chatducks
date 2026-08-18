@@ -306,10 +306,17 @@
         }
 
         .speech-bubble-text {
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .speech-bubble-text.ticker {
+            animation: ticker-scroll var(--scroll-duration) linear infinite alternate;
+            animation-delay: 1s;
+        }
+
+        @keyframes ticker-scroll {
+            0%, 10% { transform: translateX(0); }
+            90%, 100% { transform: translateX(calc(var(--scroll-dist) * -1)); }
         }
 
         .action-container {
@@ -1751,6 +1758,18 @@
             user.bubbles.push(bubbleEl);
 
             void bubbleEl.offsetWidth;
+
+            // Check for overflow and apply ticker if needed
+            const scrollW = textEl.scrollWidth;
+            const availableW = bubbleEl.clientWidth - 24; // approx 12px padding on each side
+            if (scrollW > availableW) {
+                const scrollDist = scrollW - availableW;
+                textEl.style.setProperty('--scroll-dist', scrollDist + 'px');
+                textEl.style.setProperty('--scroll-duration', (scrollDist / 30) + 's');
+                textEl.classList.add('ticker');
+                bubbleEl.style.justifyContent = 'flex-start';
+            }
+
             bubbleEl.classList.add('active');
 
             setTimeout(() => {
