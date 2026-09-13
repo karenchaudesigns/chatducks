@@ -614,6 +614,7 @@
         const BUBBLE_DURATION_MS = 150000;      // 5 minutes. How long chat bubbles stay up.
         
         let client = null; // tmi.js client
+        let broadcasterName = null; // Store the broadcaster's channel name
         const activeUsers = new Map(); // Stores { element, duckColor, inactivityTimer, bubbleTimer }
         const pond = document.getElementById('pond');
         const setupModal = document.getElementById('setup-modal');
@@ -696,9 +697,16 @@
 
             client.connect().then(() => {
                 // Successfully connected
+                broadcasterName = channel.toLowerCase();
                 setupModal.style.opacity = '0';
                 setTimeout(() => {
                     setupModal.style.display = 'none';
+
+                    if (!activeUsers.has(broadcasterName)) {
+                        let user = spawnDuck(broadcasterName, null, false);
+                        activeUsers.set(broadcasterName, user);
+                        updateDuckActivity(broadcasterName, user);
+                    }
                 }, 500);
             }).catch(console.error);
 
@@ -1372,8 +1380,14 @@
         }
 
         function updateDuckActivity(username, user) {
-            globalZIndex++;
-            user.element.style.zIndex = globalZIndex;
+            const isBroadcaster = broadcasterName && username.toLowerCase() === broadcasterName;
+
+            if (isBroadcaster) {
+                user.element.style.zIndex = 999999;
+            } else {
+                globalZIndex++;
+                user.element.style.zIndex = globalZIndex;
+            }
 
             // Clear leaving class to start entry animation (or stop drifting back)
             user.element.classList.remove('leaving');
@@ -1389,10 +1403,12 @@
             // 2. Reset their inactivity timer
             clearTimeout(user.inactivityTimer);
 
-            // Wait 2 seconds for the entrance animation to finish, then start the slow drift back
-            setTimeout(() => {
-                user.element.classList.add('leaving');
-            }, 2000);
+            // Wait 2 seconds for the entrance animation to finish, then start the slow drift back (except for broadcaster)
+            if (!isBroadcaster) {
+                setTimeout(() => {
+                    user.element.classList.add('leaving');
+                }, 2000);
+            }
 
             user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
         }
@@ -1628,6 +1644,8 @@
          * RENDER LOGIC: Removing Ducks
          */
         function removeDuck(username) {
+            if (broadcasterName && username.toLowerCase() === broadcasterName) return;
+
             const user = activeUsers.get(username);
             if (!user) return;
 
