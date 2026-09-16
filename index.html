@@ -1620,6 +1620,38 @@
 
             let user = activeUsers.get(username);
 
+            // Check if user exists under a different case (like the broadcaster starting lowercase)
+            if (!user) {
+                for (let [key, val] of activeUsers.entries()) {
+                    if (key.toLowerCase() === username.toLowerCase()) {
+                        user = val;
+
+                        // Replace lowercase key with properly cased username
+                        activeUsers.delete(key);
+                        activeUsers.set(username, user);
+
+                        // Update visual name
+                        const nameEl = user.element.querySelector('.duck-name');
+                        if (nameEl) {
+                            nameEl.textContent = username;
+                        }
+
+                        // If user has a chat color and it differs from duckColor, update it
+                        if (userColor && user.duckColor !== userColor) {
+                            user.duckColor = userColor;
+                            if (nameEl) {
+                                nameEl.style.color = userColor;
+                            }
+                            const svgContainer = user.element.querySelector('.duck-svg');
+                            if (svgContainer) {
+                                svgContainer.innerHTML = getDuckImageHTML(username, userColor);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
             // 1. Spawn a new duck if they aren't active
             if (!user) {
                 const isRecentRaid = (Date.now() - lastRaidTime) < RAID_WINDOW_MS;
