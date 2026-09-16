@@ -727,6 +727,53 @@
             });
         }
 
+
+        /**
+         * TEMP POND PAL LOGIC
+         */
+        const AVAILABLE_TEMP_OPTIONS = ['alien', 'astronaut', 'ghost', 'ninja', 'pirate', 'wizard'];
+        const TEMP_OPTION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+        function getTempDuckOption(username) {
+            const key = `tempDuck_${username.toLowerCase()}`;
+            const dataStr = localStorage.getItem(key);
+            if (!dataStr) return null;
+
+            try {
+                const data = JSON.parse(dataStr);
+                if (Date.now() - data.timestamp > TEMP_OPTION_EXPIRY_MS) {
+                    localStorage.removeItem(key);
+                    return null;
+                }
+                return data.option;
+            } catch (e) {
+                localStorage.removeItem(key);
+                return null;
+            }
+        }
+
+        function setTempDuckOption(username, optionName) {
+            const key = `tempDuck_${username.toLowerCase()}`;
+            localStorage.setItem(key, JSON.stringify({
+                option: optionName,
+                timestamp: Date.now()
+            }));
+        }
+
+        function getDuckImageHTML(username, finalColor) {
+            const safeUsername = escapeHtml(username);
+            const encUsername = encodeURIComponent(username);
+            const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
+
+            const tempOption = getTempDuckOption(username);
+            if (tempOption) {
+                // If it has a temp option, try the temp image. Fallback to standard if it doesn't exist
+                return `<img src="assets/custom_ducks/temp_options/${tempOption}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />`;
+            } else {
+                return `<img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />`;
+            }
+        }
+
         /**
          * CORE STATE MANAGEMENT
          */
@@ -1033,7 +1080,7 @@
                         <line x1="80" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
                     </svg>
                     <div class="duck-svg sparkle-effect">
-                        <img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}');" />
+                        ${getDuckImageHTML(username, finalColor)}
                     </div>
                     <div class="duck-name" style="color: ${finalColor};">${safeUsername}</div>
                 </div>
@@ -1152,6 +1199,39 @@
         }
 
         function handleGlobalCommands(username, textTrim, tags) {
+            if (textTrim.startsWith('!assigntemp ')) {
+                if (tags && tags.badges && tags.badges.broadcaster) {
+                    const args = textTrim.split(/\s+/).slice(1);
+                    if (args.length >= 2) {
+                        let targetUser = args[0].startsWith('@') ? args[0].substring(1) : args[0];
+                        let option = args[1].toLowerCase();
+
+                        if (option === 'random') {
+                            option = AVAILABLE_TEMP_OPTIONS[Math.floor(Math.random() * AVAILABLE_TEMP_OPTIONS.length)];
+                        }
+
+                        // Just assume it exists and save state
+                        setTempDuckOption(targetUser, option);
+
+                        // If user is currently on screen (and not lurking), update their image immediately
+                        let userObj = activeUsers.get(targetUser);
+                        if (!userObj) {
+                            for (let [k, v] of activeUsers.entries()) {
+                                if (k.toLowerCase() === targetUser.toLowerCase()) {
+                                    userObj = v;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (userObj && !userObj.isLurking) {
+                            userObj.element.querySelector('.duck-svg').innerHTML = getDuckImageHTML(targetUser, userObj.duckColor);
+                        }
+                    }
+                }
+                return true;
+            }
+
             if (textTrim.startsWith('!countdown ')) {
                 const argsStr = textTrim.substring('!countdown '.length).trim();
                 const timeEndRegex = /((?:\s*\d+\s*(?:hours?|h|minutes?|mins?|m|seconds?|secs?|s)?)+)$/i;
@@ -1198,7 +1278,7 @@
                             <div class="duck-swim" style="animation: none !important;">
                                 <div class="bubble-container"></div>
                                 <div class="duck-svg" style="transform: scaleX(1) !important;">
-                                    <img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />
+                                    ${getDuckImageHTML(username, finalColor)}
                                 </div>
                                 <div class="duck-name" style="color: ${finalColor};">${displayName}</div>
                             </div>
@@ -1329,7 +1409,7 @@
                 const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
                 user.isLurking = false;
                 user.element.classList.remove("lurking");
-                user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />`;
+                user.element.querySelector('.duck-svg').innerHTML = `${getDuckImageHTML(username, user.duckColor)}`;
                 checkPendingGifts(username, user);
                 scatterDucks();
                 return true;
@@ -1359,7 +1439,7 @@
                     const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
                     user.isLurking = false;
                     user.element.classList.remove("lurking");
-                    user.element.querySelector('.duck-svg').innerHTML = `<img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${user.duckColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />`;
+                    user.element.querySelector('.duck-svg').innerHTML = `${getDuckImageHTML(username, user.duckColor)}`;
                     // Scatter handles repositioning later, but reset scale and let it re-animate
                     checkPendingGifts(username, user);
                     scatterDucks();
@@ -1574,7 +1654,7 @@
                     <div class="action-container"></div>
                     <div class="bubble-container"></div>
                     <div class="duck-svg">
-                        <img src="assets/custom_ducks/${encUsername}.png" alt="${safeUsername}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.onerror = () => { this.onerror = null; this.parentElement.innerHTML = getDuckSVG('${finalColor}'); }; this.src = 'assets/custom_ducks/' + '${encUsernameLower}' + '.png';" />
+                        ${getDuckImageHTML(username, finalColor)}
                     </div>
                     <div class="duck-name" style="color: ${finalColor};">${safeUsername}</div>
                 </div>
