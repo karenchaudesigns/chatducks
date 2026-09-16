@@ -1,3 +1,30 @@
+
+// Mocking DOM elements for node.js test
+const document = {
+    getElementById: (id) => ({
+        appendChild: () => {},
+        style: {}
+    }),
+    createElement: (tag) => ({
+        style: {},
+        classList: { add: () => {}, remove: () => {} },
+        appendChild: () => {},
+        querySelector: () => ({ innerHTML: '' })
+    }),
+    body: { appendChild: () => {} }
+};
+
+const localStorage = {
+    _data: {},
+    getItem: function(key) { return this._data[key] || null; },
+    setItem: function(key, val) { this._data[key] = val; },
+    removeItem: function(key) { delete this._data[key]; }
+};
+
+const window = {
+    location: { search: '' }
+};
+
         /**
          * CONFIGURATION
          */
