@@ -33,6 +33,7 @@ You can also use temporary pond pals by creating a `temp_options` directory (`as
 - `!testraid`: Simulates a raid of ducks landing in the pond.
 - `!treats`: Randomly sprinkles treats in one section of the pond, and all active ducks will hurry to eat them.
 - `!yay`: Triggers a confetti party effect.
+- `!teststreak [username] [count]`: (Broadcaster Only) Tests the stream streak animation for a given user.
 - `!assigntemp @username option_name`: (Broadcaster Only) Assigns a temporary pond pal to the specified user for 24 hours. The `option_name` should match a `.png` file in the `assets/custom_ducks/temp_options/` directory (e.g. `alien` for `alien.png`). You can also use `random` as the option name to randomly select an available pond pal.
 
 ## Features

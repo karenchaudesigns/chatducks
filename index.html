@@ -1447,7 +1447,7 @@
 
 
             if (textTrim.startsWith('!teststreak ')) {
-                if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
+                if (tags && tags.badges && tags.badges.broadcaster) {
                     const args = textTrim.split(/\s+/);
                     let targetUser = args[1] || username;
                     if (targetUser.startsWith('@')) {
