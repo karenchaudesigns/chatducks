@@ -606,12 +606,13 @@
     </svg>
     <div id="pond"></div>
 
+    <script src="config.js"></script>
     <script>
         /**
          * CONFIGURATION
          */
-        const INACTIVITY_LIMIT_MS = 60000 * 10; // 10 minutes. Ducks leave if silent this long.
-        const BUBBLE_DURATION_MS = 150000;      // 5 minutes. How long chat bubbles stay up.
+        const INACTIVITY_LIMIT_MS = (typeof CONFIG !== 'undefined' && CONFIG.INACTIVITY_LIMIT_MS) ? CONFIG.INACTIVITY_LIMIT_MS : 60000 * 30; // 30 minutes. Ducks leave if silent this long.
+        const BUBBLE_DURATION_MS = (typeof CONFIG !== 'undefined' && CONFIG.BUBBLE_DURATION_MS) ? CONFIG.BUBBLE_DURATION_MS : 150000;      // 5 minutes. How long chat bubbles stay up.
         
         let client = null; // tmi.js client
         let broadcasterName = null; // Store the broadcaster's channel name
