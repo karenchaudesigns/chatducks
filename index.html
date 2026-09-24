@@ -498,6 +498,40 @@
             100% { transform: scale(1.5); opacity: 1; }
         }
 
+
+        .censor-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 25px;
+            background: repeating-conic-gradient(
+                #d3a17e 0% 25%,
+                #b0866b 25% 50%,
+                #a06f50 50% 75%,
+                #e5bd9c 75% 100%
+            );
+            background-size: 5px 5px;
+            z-index: 15;
+        }
+
+        .censor-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 25px;
+            background: repeating-conic-gradient(
+                #d3a17e 0% 25%,
+                #b0866b 25% 50%,
+                #a06f50 50% 75%,
+                #e5bd9c 75% 100%
+            );
+            background-size: 5px 5px;
+            z-index: 15;
+        }
     </style>
 </head>
 <body>
@@ -728,6 +762,28 @@
             // Listen for messages
                         client.on('raided', (channel, username, viewers, tags) => {
                 handleRaid(username, viewers);
+            });
+
+
+            client.on('usernotice', (msgid, channel, tags, msg) => {
+                if (msgid === 'viewermilestone') {
+                    const category = tags['msg-param-category'];
+                    if (category === 'watch-streak') {
+                        const count = parseInt(tags['msg-param-value'], 10) || 1;
+                        handleStreamStreak(tags['display-name'] || tags.login, count, tags);
+                    }
+                }
+            });
+
+
+            client.on('usernotice', (msgid, channel, tags, msg) => {
+                if (msgid === 'viewermilestone') {
+                    const category = tags['msg-param-category'];
+                    if (category === 'watch-streak') {
+                        const count = parseInt(tags['msg-param-value'], 10) || 1;
+                        handleStreamStreak(tags['display-name'] || tags.login, count, tags);
+                    }
+                }
             });
 
             client.on('message', (channel, tags, message, self) => {
@@ -1389,6 +1445,16 @@
                 return true;
             }
 
+
+            if (textTrim.startsWith('!teststreak ')) {
+                if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
+                    const args = textTrim.split(/\s+/);
+                    const count = parseInt(args[1], 10) || 1;
+                    handleStreamStreak(username, count, tags);
+                }
+                return true;
+            }
+
             if (textTrim === '!testlurk' || textTrim.startsWith('!testlurk ')) {
                 if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
                     const args = textTrim.split(/\s+/);
@@ -1476,6 +1542,192 @@
             }
 
             return false;
+        }
+
+
+        async function handleStreamStreak(username, count, tags) {
+            let user = activeUsers.get(username);
+
+            // Check case-insensitive
+            if (!user) {
+                for (let [key, val] of activeUsers.entries()) {
+                    if (key.toLowerCase() === username.toLowerCase()) {
+                        user = val;
+                        activeUsers.delete(key);
+                        activeUsers.set(username, user);
+                        const nameEl = user.element.querySelector('.duck-name');
+                        if (nameEl) nameEl.textContent = username;
+                        break;
+                    }
+                }
+            }
+
+            if (!user) {
+                const hexColor = tags && tags.color ? tags.color : generateColorFromUsername(username);
+                user = spawnDuck(username, hexColor, true);
+            }
+
+            updateDuckActivity(username, user);
+
+            // Wait for entrance animation to finish
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            user.isBusy = true;
+            user.isLurking = false;
+            user.element.classList.remove('lurking');
+
+            let censorBar = user.element.querySelector('.censor-bar');
+            if (!censorBar) {
+                censorBar = document.createElement('div');
+                censorBar.className = 'censor-bar';
+                user.element.appendChild(censorBar);
+            }
+
+            const duckWidth = 100;
+            const pondWidth = document.getElementById('pond').clientWidth;
+
+            for (let i = 1; i <= count; i++) {
+                showActionText(user, `${i}!`, null);
+
+                // Move from left to right or right to left
+                const startLeft = i % 2 === 1 ? -duckWidth : pondWidth;
+                const endLeft = i % 2 === 1 ? pondWidth : -duckWidth;
+
+                // Turn off transition to snap to the start
+                user.element.style.transition = 'none';
+                user.element.style.left = `${startLeft}px`;
+
+                // Bring to absolute foreground
+                user.element.style.zIndex = '9999';
+
+                // Pause flip animation so it faces the direction it's running
+                const svg = user.element.querySelector('.duck-svg');
+                if (svg) {
+                    svg.style.animation = 'none';
+                    svg.style.transform = i % 2 === 1 ? 'scaleX(-1)' : 'scaleX(1)'; // Face direction of travel
+                }
+
+                // Wait a tick for the browser to register the start position
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                // Now turn transition back on to animate to the end
+                user.element.style.transition = 'left 1s linear';
+                user.element.style.left = `${endLeft}px`;
+
+                // Wait for the animation across the screen
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            // Cleanup and reset to normal behavior
+            if (censorBar) censorBar.remove();
+
+            const svg = user.element.querySelector('.duck-svg');
+            if (svg) {
+                svg.style.animation = 'flip-duck 30s infinite steps(1)';
+            }
+
+            user.element.style.transition = 'left 10s ease-in-out';
+
+            // Reset z-index and randomly position in pond
+            user.element.style.zIndex = '';
+            const safeWidth = pondWidth - duckWidth;
+            const newLeft = Math.floor(Math.random() * safeWidth);
+            user.element.style.left = `${newLeft}px`;
+
+            user.isBusy = false;
+        }
+
+
+        async function handleStreamStreak(username, count, tags) {
+            let user = activeUsers.get(username);
+
+            // Check case-insensitive
+            if (!user) {
+                for (let [key, val] of activeUsers.entries()) {
+                    if (key.toLowerCase() === username.toLowerCase()) {
+                        user = val;
+                        activeUsers.delete(key);
+                        activeUsers.set(username, user);
+                        const nameEl = user.element.querySelector('.duck-name');
+                        if (nameEl) nameEl.textContent = username;
+                        break;
+                    }
+                }
+            }
+
+            if (!user) {
+                const hexColor = tags && tags.color ? tags.color : generateColorFromUsername(username);
+                user = spawnDuck(username, hexColor, true);
+            }
+
+            updateDuckActivity(username, user);
+
+            // Wait for entrance animation to finish
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            user.isBusy = true;
+            user.isLurking = false;
+            user.element.classList.remove('lurking');
+
+            let censorBar = user.element.querySelector('.censor-bar');
+            if (!censorBar) {
+                censorBar = document.createElement('div');
+                censorBar.className = 'censor-bar';
+                user.element.appendChild(censorBar);
+            }
+
+            const duckWidth = 100;
+            const pondWidth = document.getElementById('pond').clientWidth;
+
+            for (let i = 1; i <= count; i++) {
+                showActionText(user, `${i}!`, null);
+
+                // Move from left to right or right to left
+                const startLeft = i % 2 === 1 ? -duckWidth : pondWidth;
+                const endLeft = i % 2 === 1 ? pondWidth : -duckWidth;
+
+                // Turn off transition to snap to the start
+                user.element.style.transition = 'none';
+                user.element.style.left = `${startLeft}px`;
+
+                // Bring to absolute foreground
+                user.element.style.zIndex = '9999';
+
+                // Pause flip animation so it faces the direction it's running
+                const svg = user.element.querySelector('.duck-svg');
+                if (svg) {
+                    svg.style.animation = 'none';
+                    svg.style.transform = i % 2 === 1 ? 'scaleX(-1)' : 'scaleX(1)'; // Face direction of travel
+                }
+
+                // Wait a tick for the browser to register the start position
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                // Now turn transition back on to animate to the end
+                user.element.style.transition = 'left 1s linear';
+                user.element.style.left = `${endLeft}px`;
+
+                // Wait for the animation across the screen
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            // Cleanup and reset to normal behavior
+            if (censorBar) censorBar.remove();
+
+            const svg = user.element.querySelector('.duck-svg');
+            if (svg) {
+                svg.style.animation = 'flip-duck 30s infinite steps(1)';
+            }
+
+            user.element.style.transition = 'left 10s ease-in-out';
+
+            // Reset z-index and randomly position in pond
+            user.element.style.zIndex = '';
+            const safeWidth = pondWidth - duckWidth;
+            const newLeft = Math.floor(Math.random() * safeWidth);
+            user.element.style.left = `${newLeft}px`;
+
+            user.isBusy = false;
         }
 
         function updateDuckActivity(username, user) {
