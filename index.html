@@ -1239,10 +1239,12 @@
 
                         // If user is currently on screen (and not lurking), update their image immediately
                         let userObj = activeUsers.get(targetUser);
+                        let matchedUsername = targetUser;
                         if (!userObj) {
                             for (let [k, v] of activeUsers.entries()) {
                                 if (k.toLowerCase() === targetUser.toLowerCase()) {
                                     userObj = v;
+                                    matchedUsername = k;
                                     break;
                                 }
                             }
@@ -1250,6 +1252,7 @@
 
                         if (userObj && !userObj.isLurking) {
                             userObj.element.querySelector('.duck-svg').innerHTML = getDuckImageHTML(targetUser, userObj.duckColor);
+                            updateDuckActivity(matchedUsername, userObj);
                         }
                     }
                 }
