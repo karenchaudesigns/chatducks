@@ -1449,8 +1449,12 @@
             if (textTrim.startsWith('!teststreak ')) {
                 if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
                     const args = textTrim.split(/\s+/);
-                    const count = parseInt(args[1], 10) || 1;
-                    handleStreamStreak(username, count, tags);
+                    let targetUser = args[1] || username;
+                    if (targetUser.startsWith('@')) {
+                        targetUser = targetUser.substring(1);
+                    }
+                    const count = parseInt(args[2], 10) || 1;
+                    handleStreamStreak(targetUser, count, tags);
                 }
                 return true;
             }
