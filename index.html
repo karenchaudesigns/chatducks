@@ -395,6 +395,49 @@
             z-index: 1;
         }
 
+
+        .streak-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 54px;
+            font-family: 'Roboto Condensed', sans-serif;
+            font-weight: bold;
+            color: white;
+            background-color: #333;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 2px solid #000;
+            z-index: 99999;
+            display: none;
+            perspective: 400px;
+        }
+
+        .streak-counter::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #000;
+            z-index: 1;
+        }
+
+        .flip-text {
+            display: inline-block;
+        }
+
+        .flip-anim {
+            animation: flip-counter-anim 0.5s ease-in-out;
+        }
+
+        @keyframes flip-counter-anim {
+            0% { transform: rotateX(0deg); }
+            50% { transform: rotateX(-90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+
         /* === ANIMATIONS === */
         @keyframes swim-horizontal {
             0% { transform: translateX(-50px); }
@@ -507,10 +550,10 @@
             width: 70px;
             height: 25px;
             background: repeating-conic-gradient(
-                #d3a17e 0% 25%,
-                #b0866b 25% 50%,
-                #a06f50 50% 75%,
-                #e5bd9c 75% 100%
+                #888888 0% 25%,
+                #666666 25% 50%,
+                #aaaaaa 50% 75%,
+                #444444 75% 100%
             );
             background-size: 5px 5px;
             z-index: 15;
@@ -524,10 +567,10 @@
             width: 70px;
             height: 25px;
             background: repeating-conic-gradient(
-                #d3a17e 0% 25%,
-                #b0866b 25% 50%,
-                #a06f50 50% 75%,
-                #e5bd9c 75% 100%
+                #888888 0% 25%,
+                #666666 25% 50%,
+                #aaaaaa 50% 75%,
+                #444444 75% 100%
             );
             background-size: 5px 5px;
             z-index: 15;
@@ -1591,7 +1634,18 @@
             const pondWidth = document.getElementById('pond').clientWidth;
 
             for (let i = 1; i <= count; i++) {
-                showActionText(user, `${i}!`, null);
+                let counterEl = document.getElementById('streak-counter');
+                if (!counterEl) {
+                    counterEl = document.createElement('div');
+                    counterEl.id = 'streak-counter';
+                    counterEl.className = 'streak-counter';
+                    document.body.appendChild(counterEl);
+                }
+                counterEl.style.display = 'block';
+                counterEl.innerHTML = `<span class="flip-text">${i}!</span>`;
+                counterEl.classList.remove('flip-anim');
+                void counterEl.offsetWidth; // trigger reflow
+                counterEl.classList.add('flip-anim');
 
                 // Move from left to right or right to left
                 const startLeft = i % 2 === 1 ? -duckWidth : pondWidth;
@@ -1615,15 +1669,17 @@
                 await new Promise(resolve => setTimeout(resolve, 50));
 
                 // Now turn transition back on to animate to the end
-                user.element.style.transition = 'left 1s linear';
+                user.element.style.transition = 'left 2s linear';
                 user.element.style.left = `${endLeft}px`;
 
                 // Wait for the animation across the screen
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 2000));
             }
 
             // Cleanup and reset to normal behavior
             if (censorBar) censorBar.remove();
+            let counterEl = document.getElementById('streak-counter');
+            if (counterEl) counterEl.style.display = 'none';
 
             const svg = user.element.querySelector('.duck-svg');
             if (svg) {
@@ -1684,7 +1740,18 @@
             const pondWidth = document.getElementById('pond').clientWidth;
 
             for (let i = 1; i <= count; i++) {
-                showActionText(user, `${i}!`, null);
+                let counterEl = document.getElementById('streak-counter');
+                if (!counterEl) {
+                    counterEl = document.createElement('div');
+                    counterEl.id = 'streak-counter';
+                    counterEl.className = 'streak-counter';
+                    document.body.appendChild(counterEl);
+                }
+                counterEl.style.display = 'block';
+                counterEl.innerHTML = `<span class="flip-text">${i}!</span>`;
+                counterEl.classList.remove('flip-anim');
+                void counterEl.offsetWidth; // trigger reflow
+                counterEl.classList.add('flip-anim');
 
                 // Move from left to right or right to left
                 const startLeft = i % 2 === 1 ? -duckWidth : pondWidth;
@@ -1708,15 +1775,17 @@
                 await new Promise(resolve => setTimeout(resolve, 50));
 
                 // Now turn transition back on to animate to the end
-                user.element.style.transition = 'left 1s linear';
+                user.element.style.transition = 'left 2s linear';
                 user.element.style.left = `${endLeft}px`;
 
                 // Wait for the animation across the screen
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 2000));
             }
 
             // Cleanup and reset to normal behavior
             if (censorBar) censorBar.remove();
+            let counterEl = document.getElementById('streak-counter');
+            if (counterEl) counterEl.style.display = 'none';
 
             const svg = user.element.querySelector('.duck-svg');
             if (svg) {
