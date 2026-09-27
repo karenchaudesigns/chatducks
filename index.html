@@ -535,47 +535,24 @@
             box-shadow: 0 0 10px #FFF, 0 0 20px #FFD700;
             animation: sparkle-anim 1s infinite alternate;
         }
-
         @keyframes sparkle-anim {
             0% { transform: scale(0.5); opacity: 0.5; }
             100% { transform: scale(1.5); opacity: 1; }
         }
-
-
         .censor-bar {
             position: absolute;
-            bottom: 10px;
+            bottom: 25px; /* Adjust as necessary to place it on the bottom half of the duck, assuming duck is ~100px tall */
             left: 50%;
             transform: translateX(-50%);
             width: 70px;
             height: 25px;
-            background: repeating-conic-gradient(
-                #888888 0% 25%,
-                #666666 25% 50%,
-                #aaaaaa 50% 75%,
-                #444444 75% 100%
-            );
-            background-size: 5px 5px;
-            z-index: 15;
-        }
-
-        .censor-bar {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 70px;
-            height: 25px;
-            background: repeating-conic-gradient(
-                #888888 0% 25%,
-                #666666 25% 50%,
-                #aaaaaa 50% 75%,
-                #444444 75% 100%
-            );
-            background-size: 5px 5px;
+            background-image: url('assets/streaking-filter.png');
+            background-size: cover;
+            background-position: center;
             z-index: 15;
         }
     </style>
+
 </head>
 <body>
 
