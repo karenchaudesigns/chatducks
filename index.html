@@ -214,6 +214,7 @@
         .duck-swim {
             /* Continuous swimming animation side to side */
             animation: swim-horizontal 30s infinite linear;
+            animation-delay: var(--sync-delay, 0s);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -223,9 +224,9 @@
             width: 80px;
             height: 80px;
 
-            animation-delay: var(--flip-delay, 0s);
+            animation-delay: var(--sync-delay, 0s);
             filter: drop-shadow(0px 8px 6px rgba(0,0,0,0.4));
-            animation: flip-duck 30s infinite linear;
+            animation: var(--flip-anim, flip-duck-right) 30s infinite linear;
         }
 
         .duck-name {
@@ -247,15 +248,15 @@
             animation: none !important;
         }
         .lurking .duck-svg {
-            transform: scaleX(1) !important;}
+            transform: scaleX(var(--scale-facing-right, 1)) !important;}
 
 
         .conversing .duck-swim, .conversing .duck-svg {
             animation: none !important;}
         .conversing.facing-left .duck-svg {
-            transform: scaleX(-1) !important;}
+            transform: scaleX(var(--scale-facing-left, -1)) !important;}
         .conversing.facing-right .duck-svg {
-            transform: scaleX(1) !important;}
+            transform: scaleX(var(--scale-facing-right, 1)) !important;}
 
         /* === SPEECH BUBBLES === */
         .bubble-container {
@@ -302,7 +303,7 @@
             50% { filter: drop-shadow(0 0 2px #F1C40F) drop-shadow(0 0 5px #FFF); }
         }
         .sparkle-effect {
-            animation: flip-duck 30s infinite linear, sparkle 1.5s infinite alternate !important;
+            animation: var(--flip-anim, flip-duck-right) 30s infinite linear, sparkle 1.5s infinite alternate !important;
         }
 
         .speech-bubble-text {
@@ -351,7 +352,7 @@
 
             /* Animate to flip sides with the duck */
             animation: flip-action 30s infinite steps(1);
-            animation-delay: var(--flip-delay, 0s);
+            animation-delay: var(--sync-delay, 0s);
         }
 
         .speech-bubble.active, .action-text.active {
@@ -441,14 +442,23 @@
         /* === ANIMATIONS === */
         @keyframes swim-horizontal {
             0% { transform: translateX(-50px); }
-            100% { transform: translateX(50px); }
+            49.9% { transform: translateX(50px); }
+            50% { transform: translateX(50px); }
+            100% { transform: translateX(-50px); }
         }
 
-        @keyframes flip-duck {
+        @keyframes flip-duck-right {
             0% { transform: scaleX(1); }
             49.9% { transform: scaleX(1); }
             50% { transform: scaleX(-1); }
             100% { transform: scaleX(-1); }
+        }
+
+        @keyframes flip-duck-left {
+            0% { transform: scaleX(-1); }
+            49.9% { transform: scaleX(-1); }
+            50% { transform: scaleX(1); }
+            100% { transform: scaleX(1); }
         }
 
 
@@ -660,6 +670,7 @@
     </svg>
     <div id="pond"></div>
 
+    <script src="head_directions.js"></script>
     <script src="config.js"></script>
     <script>
         /**
@@ -843,6 +854,22 @@
                 option: optionName,
                 timestamp: Date.now()
             }));
+        }
+
+        function applyDuckDirection(duckWrap, username) {
+            const tempOption = getTempDuckOption(username);
+            const key = tempOption ? tempOption.toLowerCase() : username.toLowerCase();
+            const direction = (typeof HEAD_DIRECTIONS !== 'undefined' && HEAD_DIRECTIONS[key]) ? HEAD_DIRECTIONS[key] : 'right';
+
+            if (direction === 'left') {
+                duckWrap.style.setProperty('--flip-anim', 'flip-duck-left');
+                duckWrap.style.setProperty('--scale-facing-left', '1');
+                duckWrap.style.setProperty('--scale-facing-right', '-1');
+            } else {
+                duckWrap.style.setProperty('--flip-anim', 'flip-duck-right');
+                duckWrap.style.setProperty('--scale-facing-left', '-1');
+                duckWrap.style.setProperty('--scale-facing-right', '1');
+            }
         }
 
         function getDuckImageHTML(username, finalColor) {
@@ -1160,6 +1187,10 @@
             const encUsername = encodeURIComponent(username);
             const duckWrap = document.createElement('div');
             duckWrap.className = 'duck-wrapper streamer-raid';
+            applyDuckDirection(duckWrap, username);
+
+            duckWrap.style.setProperty('--sync-delay', '0s');
+
             // Start at top for parachuting
             duckWrap.style.left = `${Math.random() * 80 + 10}%`;
             duckWrap.style.bottom = '100vh';
@@ -1170,7 +1201,7 @@
             const finalColor = generateColorFromUsername(username);
 
             duckWrap.innerHTML = `
-                <div class="duck-swim" style="animation-delay: 0s;">
+                <div class="duck-swim">
                     <div class="action-container"></div>
                     <div class="bubble-container"></div>
                     <svg class="parachute-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="position: absolute; top: -80px; left: -10px; width: 100px; height: 100px; transition: opacity 0.5s;">
@@ -1328,6 +1359,7 @@
 
                         if (userObj && !userObj.isLurking) {
                             userObj.element.querySelector('.duck-svg').innerHTML = getDuckImageHTML(targetUser, userObj.duckColor);
+                            applyDuckDirection(userObj.element, targetUser);
                             updateDuckActivity(matchedUsername, userObj);
                         }
                     }
@@ -1619,7 +1651,7 @@
             const duckWidth = 100;
             const pondWidth = document.getElementById('pond').clientWidth;
 
-            const STREAK_SPEED_MS = 4000; // Original was 2000, 50% slower is 4000
+            const STREAK_SPEED_MS = 8000; // Original was 2000, 50% slower is 4000, 50% slower again is 8000
 
             for (let i = 1; i <= count; i++) {
                 let counterEl = document.getElementById('streak-counter');
@@ -1650,7 +1682,7 @@
                 const svgContainer = user.element.querySelector('.duck-svg');
                 if (svgContainer) {
                     svgContainer.style.animation = 'none';
-                    svgContainer.style.transform = i % 2 === 1 ? 'scaleX(-1)' : 'scaleX(1)'; // Face direction of travel
+                    svgContainer.style.transform = i % 2 === 1 ? 'scaleX(var(--scale-facing-right, 1))' : 'scaleX(var(--scale-facing-left, -1))'; // Face direction of travel
                 }
 
                 // Wait a tick for the browser to register the start position
@@ -1672,7 +1704,7 @@
             // Revert back to original duck HTML
             if (duckSvgContainer && originalDuckHTML) {
                 duckSvgContainer.innerHTML = originalDuckHTML;
-                duckSvgContainer.style.animation = 'flip-duck 30s infinite steps(1)';
+                duckSvgContainer.style.animation = '';
             }
 
             user.element.style.transition = 'left 10s ease-in-out';
@@ -1915,19 +1947,17 @@
 
             const duckWrap = document.createElement('div');
             duckWrap.className = 'duck-wrapper';
+            applyDuckDirection(duckWrap, username);
 
-            // Randomize the swimming animation start time slightly
-            const randomDelay = (Math.random() * 2).toFixed(2);
-            
             // Random animation delay for the flip animation (0s to 30s)
-            const flipDelay = -(Math.random() * 30).toFixed(2) + 's';
-            duckWrap.style.setProperty('--flip-delay', flipDelay);
+            const syncDelay = -(Math.random() * 30).toFixed(2) + 's';
+            duckWrap.style.setProperty('--sync-delay', syncDelay);
 
             // If the user hasn't set a custom Twitch color, generate a consistent one based on their name
             const finalColor = hexColor ? hexColor : generateColorFromUsername(username);
 
             duckWrap.innerHTML = `
-                <div class="duck-swim" style="animation-delay: -${randomDelay}s;">
+                <div class="duck-swim">
                     <div class="action-container"></div>
                     <div class="bubble-container"></div>
                     <div class="duck-svg">
