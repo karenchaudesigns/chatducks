@@ -218,6 +218,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            position: relative;
         }
 
         .duck-svg {
@@ -1647,7 +1648,8 @@
             if (!censorBar) {
                 censorBar = document.createElement('div');
                 censorBar.className = 'censor-bar';
-                user.element.appendChild(censorBar);
+                const swimEl = user.element.querySelector('.duck-swim') || user.element;
+                swimEl.appendChild(censorBar);
             }
 
             const duckWidth = 100;
