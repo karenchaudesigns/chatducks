@@ -1712,7 +1712,13 @@
             user.element.style.transition = 'left 10s ease-in-out';
 
             // Reset z-index and randomly position in pond
-            user.element.style.zIndex = '';
+            const isBroadcaster = broadcasterName && username.toLowerCase() === broadcasterName;
+            if (isBroadcaster) {
+                user.element.style.zIndex = 999999;
+            } else {
+                user.element.style.zIndex = '';
+            }
+
             const safeWidth = pondWidth - duckWidth;
             const newLeft = Math.floor(Math.random() * safeWidth);
             user.element.style.left = `${newLeft}px`;
@@ -1922,6 +1928,12 @@
                 activeUsers.set(username, user);
             }
 
+            // Save user color and exact display name to localStorage for future reloads
+            localStorage.setItem(`userMeta_${username.toLowerCase()}`, JSON.stringify({
+                displayName: username,
+                color: user.duckColor
+            }));
+
             if (handleLurkState(username, user, textTrim, text, emotes)) {
                 return;
             }
@@ -1943,27 +1955,39 @@
          * RENDER LOGIC: Spawning Ducks
          */
         function spawnDuck(username, hexColor, fromHorizon = false) {
-            const safeUsername = escapeHtml(username);
-            const encUsername = encodeURIComponent(username);
-            const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
+            let actualUsername = username;
+            let actualColor = hexColor;
+
+            try {
+                const cachedStr = localStorage.getItem(`userMeta_${username.toLowerCase()}`);
+                if (cachedStr) {
+                    const cached = JSON.parse(cachedStr);
+                    if (!hexColor && cached.color) actualColor = cached.color;
+                    if (username.toLowerCase() === cached.displayName.toLowerCase()) actualUsername = cached.displayName;
+                }
+            } catch(e) {}
+
+            const safeUsername = escapeHtml(actualUsername);
+            const encUsername = encodeURIComponent(actualUsername);
+            const encUsernameLower = encodeURIComponent(actualUsername.toLowerCase()).replace(/'/g, "%27");
 
             const duckWrap = document.createElement('div');
             duckWrap.className = 'duck-wrapper';
-            applyDuckDirection(duckWrap, username);
+            applyDuckDirection(duckWrap, actualUsername);
 
             // Random animation delay for the flip animation (0s to 30s)
             const syncDelay = -(Math.random() * 30).toFixed(2) + 's';
             duckWrap.style.setProperty('--sync-delay', syncDelay);
 
             // If the user hasn't set a custom Twitch color, generate a consistent one based on their name
-            const finalColor = hexColor ? hexColor : generateColorFromUsername(username);
+            const finalColor = actualColor ? actualColor : generateColorFromUsername(actualUsername);
 
             duckWrap.innerHTML = `
                 <div class="duck-swim">
                     <div class="action-container"></div>
                     <div class="bubble-container"></div>
                     <div class="duck-svg">
-                        ${getDuckImageHTML(username, finalColor)}
+                        ${getDuckImageHTML(actualUsername, finalColor)}
                     </div>
                     <div class="duck-name" style="color: ${finalColor};">${safeUsername}</div>
                 </div>
@@ -2002,7 +2026,7 @@
                 isLurking: false
             };
 
-            checkPendingGifts(username, userObj);
+            checkPendingGifts(actualUsername, userObj);
 
             setTimeout(() => {
                 if (typeof scatterDucks === 'function') {
