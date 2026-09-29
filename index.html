@@ -1329,6 +1329,7 @@
             });
         }
 
+        let tempRandSeed = Date.now();
         function handleGlobalCommands(username, textTrim, tags) {
             if (textTrim.startsWith('!assigntemp ')) {
                 if (tags && tags.badges && tags.badges.broadcaster) {
@@ -1338,7 +1339,8 @@
                         let option = args.slice(1).join(' ').toLowerCase();
 
                         if (option === 'random') {
-                            option = AVAILABLE_TEMP_OPTIONS[Math.floor(Math.random() * AVAILABLE_TEMP_OPTIONS.length)];
+                            tempRandSeed = (tempRandSeed * 9301 + 49297) % 233280;
+                            option = AVAILABLE_TEMP_OPTIONS[Math.floor((tempRandSeed / 233280) * AVAILABLE_TEMP_OPTIONS.length)];
                         }
 
                         // Just assume it exists and save state
