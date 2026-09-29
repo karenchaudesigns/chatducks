@@ -1361,7 +1361,11 @@
                         }
 
                         if (userObj && !userObj.isLurking) {
-                            userObj.element.querySelector('.duck-svg').innerHTML = getDuckImageHTML(targetUser, userObj.duckColor);
+                            if (userObj.isStreaking) {
+                                userObj.originalDuckHTML = getDuckImageHTML(targetUser, userObj.duckColor);
+                            } else {
+                                userObj.element.querySelector('.duck-svg').innerHTML = getDuckImageHTML(targetUser, userObj.duckColor);
+                            }
                             applyDuckDirection(userObj.element, targetUser);
                             updateDuckActivity(matchedUsername, userObj);
                         }
@@ -1561,7 +1565,11 @@
                 const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
                 user.isLurking = false;
                 user.element.classList.remove("lurking");
-                user.element.querySelector('.duck-svg').innerHTML = `${getDuckImageHTML(username, user.duckColor)}`;
+                if (user.isStreaking) {
+                    user.originalDuckHTML = `${getDuckImageHTML(username, user.duckColor)}`;
+                } else {
+                    user.element.querySelector('.duck-svg').innerHTML = `${getDuckImageHTML(username, user.duckColor)}`;
+                }
                 checkPendingGifts(username, user);
                 scatterDucks();
                 return true;
@@ -1591,7 +1599,11 @@
                     const encUsernameLower = encodeURIComponent(username.toLowerCase()).replace(/'/g, "%27");
                     user.isLurking = false;
                     user.element.classList.remove("lurking");
-                    user.element.querySelector('.duck-svg').innerHTML = `${getDuckImageHTML(username, user.duckColor)}`;
+                    if (user.isStreaking) {
+                        user.originalDuckHTML = `${getDuckImageHTML(username, user.duckColor)}`;
+                    } else {
+                        user.element.querySelector('.duck-svg').innerHTML = `${getDuckImageHTML(username, user.duckColor)}`;
+                    }
                     // Scatter handles repositioning later, but reset scale and let it re-animate
                     checkPendingGifts(username, user);
                     scatterDucks();
@@ -1636,10 +1648,11 @@
             user.element.classList.remove('lurking');
 
             // Temporarily revert back to the default duck for the duration of the streak
-            let originalDuckHTML = "";
+            user.isStreaking = true;
+            user.originalDuckHTML = "";
             const duckSvgContainer = user.element.querySelector('.duck-svg');
             if (duckSvgContainer) {
-                originalDuckHTML = duckSvgContainer.innerHTML;
+                user.originalDuckHTML = duckSvgContainer.innerHTML;
                 const streakColor = tags && tags.color ? tags.color : generateColorFromUsername(username);
                 duckSvgContainer.innerHTML = getDuckSVG(streakColor);
             }
@@ -1706,10 +1719,11 @@
             if (counterEl) counterEl.style.display = 'none';
 
             // Revert back to original duck HTML
-            if (duckSvgContainer && originalDuckHTML) {
-                duckSvgContainer.innerHTML = originalDuckHTML;
+            if (duckSvgContainer && user.originalDuckHTML) {
+                duckSvgContainer.innerHTML = user.originalDuckHTML;
                 duckSvgContainer.style.animation = '';
             }
+            user.isStreaking = false;
 
             user.element.style.transition = 'left 10s ease-in-out';
 
@@ -1907,17 +1921,6 @@
                             nameEl.textContent = username;
                         }
 
-                        // If user has a chat color and it differs from duckColor, update it
-                        if (userColor && user.duckColor !== userColor) {
-                            user.duckColor = userColor;
-                            if (nameEl) {
-                                nameEl.style.color = userColor;
-                            }
-                            const svgContainer = user.element.querySelector('.duck-svg');
-                            if (svgContainer) {
-                                svgContainer.innerHTML = getDuckImageHTML(username, userColor);
-                            }
-                        }
                         break;
                     }
                 }
@@ -1928,6 +1931,23 @@
                 const isRecentRaid = (Date.now() - lastRaidTime) < RAID_WINDOW_MS;
                 user = spawnDuck(username, userColor, isRecentRaid);
                 activeUsers.set(username, user);
+            }
+
+            // Update user color if it changed or wasn't set properly (e.g. for broadcaster)
+            if (userColor && user.duckColor !== userColor) {
+                user.duckColor = userColor;
+                const nameEl = user.element.querySelector('.duck-name');
+                if (nameEl) {
+                    nameEl.style.color = userColor;
+                }
+                const svgContainer = user.element.querySelector('.duck-svg');
+                if (svgContainer) {
+                    if (user.isStreaking) {
+                        user.originalDuckHTML = getDuckImageHTML(username, userColor);
+                    } else {
+                        svgContainer.innerHTML = getDuckImageHTML(username, userColor);
+                    }
+                }
             }
 
             // Save user color and exact display name to localStorage for future reloads
