@@ -1475,7 +1475,29 @@
             }
 
             if (textTrim === '!treats') {
-                if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster))) {
+                if (tags && (tags.mod || (tags.badges && tags.badges.broadcaster) || tags['custom-reward-id'])) {
+                    // Check if user is in pond, spawn if not, so they can take part in treats
+                    let user = activeUsers.get(username);
+                    if (!user) {
+                        for (let [key, val] of activeUsers.entries()) {
+                            if (key.toLowerCase() === username.toLowerCase()) {
+                                user = val;
+                                activeUsers.delete(key);
+                                activeUsers.set(username, user);
+                                const nameEl = user.element.querySelector('.duck-name');
+                                if (nameEl) nameEl.textContent = username;
+                                break;
+                            }
+                        }
+                    }
+                    if (!user) {
+                        const isRecentRaid = (Date.now() - lastRaidTime) < RAID_WINDOW_MS;
+                        const userColor = tags && tags.color ? tags.color : generateColorFromUsername(username);
+                        user = spawnDuck(username, userColor, isRecentRaid);
+                        activeUsers.set(username, user);
+                    }
+
+                    updateDuckActivity(username, user);
                     spawnTreats();
                 }
                 return true;
