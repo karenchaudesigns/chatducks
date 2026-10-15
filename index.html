@@ -1658,6 +1658,7 @@
             if (!user) {
                 const hexColor = tags && tags.color ? tags.color : generateColorFromUsername(username);
                 user = spawnDuck(username, hexColor, true);
+                activeUsers.set(username, user);
             }
 
             updateDuckActivity(username, user);
@@ -1762,6 +1763,16 @@
             user.element.style.left = `${newLeft}px`;
 
             user.isBusy = false;
+
+            // Wait for repositioning to finish, then restore default transitions and start drifting back
+            setTimeout(() => {
+                if (!user.isStreaking) {
+                    user.element.style.transition = '';
+                    if (!isBroadcaster && !user.isBusy) {
+                        user.element.classList.add('leaving');
+                    }
+                }
+            }, 10000);
         }
 
 
@@ -1776,6 +1787,19 @@
                 user.element.style.zIndex = globalZIndex;
             }
 
+            // 2. Reset their inactivity timer
+            clearTimeout(user.inactivityTimer);
+            user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
+
+            if (user.isStreaking) {
+                return;
+            }
+
+            // Clear any previously scheduled leaving timeout
+            if (user.leavingTimer) {
+                clearTimeout(user.leavingTimer);
+            }
+
             // Clear leaving class to start entry animation (or stop drifting back)
             user.element.classList.remove('leaving');
 
@@ -1787,17 +1811,14 @@
             user.element.style.bottom = '5%';
             user.element.style.transform = 'scale(1.5)';
 
-            // 2. Reset their inactivity timer
-            clearTimeout(user.inactivityTimer);
-
             // Wait 2 seconds for the entrance animation to finish, then start the slow drift back (except for broadcaster)
             if (!isBroadcaster) {
-                setTimeout(() => {
-                    user.element.classList.add('leaving');
+                user.leavingTimer = setTimeout(() => {
+                    if (!user.isStreaking) {
+                        user.element.classList.add('leaving');
+                    }
                 }, 2000);
             }
-
-            user.inactivityTimer = setTimeout(() => removeDuck(username), INACTIVITY_LIMIT_MS);
         }
 
         function handleDuckInteractions(user, textTrim, tags) {
