@@ -154,6 +154,18 @@
             pointer-events: none; /* Let clicks pass through if used over other elements */
         }
 
+
+        #pond-bg-img {
+            position: absolute;
+            bottom: 0px;
+            left: 5%;
+            width: 90%;
+            height: 225px;
+            pointer-events: none;
+            z-index: -1;
+            object-fit: cover;
+            display: none; /* hidden by default */
+        }
         #pond-bg {
             position: absolute;
             bottom: 0px;
@@ -669,6 +681,7 @@
         <path d="M 700 230 Q 690 190 680 230 Q 700 240 700 230" fill="#2E7D32" />
 
     </svg>
+    <img id="pond-bg-img" alt="Pond Background" />
     <div id="pond"></div>
 
     <script src="head_directions.js"></script>
@@ -679,6 +692,9 @@
          */
         const INACTIVITY_LIMIT_MS = (typeof CONFIG !== 'undefined' && CONFIG.INACTIVITY_LIMIT_MS) ? CONFIG.INACTIVITY_LIMIT_MS : 60000 * 30; // 30 minutes. Ducks leave if silent this long.
         const BUBBLE_DURATION_MS = (typeof CONFIG !== 'undefined' && CONFIG.BUBBLE_DURATION_MS) ? CONFIG.BUBBLE_DURATION_MS : 150000;      // 5 minutes. How long chat bubbles stay up.
+
+        const POND_BACKGROUND = (typeof CONFIG !== 'undefined' && CONFIG.POND_BACKGROUND) ? CONFIG.POND_BACKGROUND : null;
+
         
         let client = null; // tmi.js client
         let broadcasterName = null; // Store the broadcaster's channel name
@@ -688,6 +704,25 @@
         const statusMsg = document.getElementById('status-msg');
 
         let globalZIndex = 100;
+
+        // Initialize pond background
+        function initPondBackground() {
+            const svgBg = document.getElementById('pond-bg');
+            const imgBg = document.getElementById('pond-bg-img');
+
+            if (POND_BACKGROUND) {
+                svgBg.style.display = 'none';
+                imgBg.style.display = 'block';
+                imgBg.src = `assets/pond_backgrounds/${POND_BACKGROUND}`;
+            } else {
+                svgBg.style.display = 'block';
+                imgBg.style.display = 'none';
+            }
+        }
+
+        // Call init right after declaration
+        initPondBackground();
+
         const pendingGifts = []; // [{ username, element, timer }]
         let lastRaidTime = 0;
         const RAID_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
