@@ -1535,7 +1535,8 @@
                         targetUser = targetUser.substring(1);
                     }
                     const count = parseInt(args[2], 10) || 1;
-                    handleStreamStreak(targetUser, count, tags);
+                    let targetTags = (targetUser.toLowerCase() === username.toLowerCase()) ? tags : {};
+                    handleStreamStreak(targetUser, count, targetTags);
                 }
                 return true;
             }
@@ -1656,7 +1657,7 @@
             }
 
             if (!user) {
-                const hexColor = tags && tags.color ? tags.color : generateColorFromUsername(username);
+                const hexColor = tags && tags.color ? tags.color : null;
                 user = spawnDuck(username, hexColor, true);
                 activeUsers.set(username, user);
             }
@@ -1676,7 +1677,7 @@
             const duckSvgContainer = user.element.querySelector('.duck-svg');
             if (duckSvgContainer) {
                 user.originalDuckHTML = duckSvgContainer.innerHTML;
-                const streakColor = tags && tags.color ? tags.color : generateColorFromUsername(username);
+                const streakColor = (tags && tags.color) ? tags.color : user.duckColor;
                 duckSvgContainer.innerHTML = getDuckSVG(streakColor);
             }
 
