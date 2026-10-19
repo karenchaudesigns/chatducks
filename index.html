@@ -713,7 +713,7 @@
             if (POND_BACKGROUND) {
                 svgBg.style.display = 'none';
                 imgBg.style.display = 'block';
-                imgBg.src = `assets/pond_backgrounds/${POND_BACKGROUND}`;
+                imgBg.src = `assets/pond_backgrounds/${encodeURIComponent(POND_BACKGROUND)}`;
             } else {
                 svgBg.style.display = 'block';
                 imgBg.style.display = 'none';
