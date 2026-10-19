@@ -158,13 +158,13 @@
         #pond-bg-img {
             position: absolute;
             bottom: 0px;
-            left: 5%;
-            width: 90%;
-            height: 225px;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            object-position: bottom;
             pointer-events: none;
             z-index: 0;
-            object-fit: contain;
-            object-position: bottom;
             display: none; /* hidden by default */
         }
         #pond-bg {
@@ -710,14 +710,17 @@
         function initPondBackground() {
             const svgBg = document.getElementById('pond-bg');
             const imgBg = document.getElementById('pond-bg-img');
+            const sign = document.getElementById('pond-sign');
 
             if (POND_BACKGROUND) {
                 svgBg.style.display = 'none';
                 imgBg.style.display = 'block';
                 imgBg.src = `assets/pond_backgrounds/${encodeURIComponent(POND_BACKGROUND)}`;
+                if (sign) sign.style.display = 'none';
             } else {
                 svgBg.style.display = 'block';
                 imgBg.style.display = 'none';
+                if (sign) sign.style.display = 'block';
             }
         }
 
