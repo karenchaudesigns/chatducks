@@ -715,7 +715,7 @@
             if (POND_BACKGROUND) {
                 svgBg.style.display = 'none';
                 imgBg.style.display = 'block';
-                imgBg.src = `assets/pond_backgrounds/${encodeURIComponent(POND_BACKGROUND)}`;
+                imgBg.src = `assets/pond_backgrounds/${encodeURIComponent(POND_BACKGROUND)}?v=${Date.now()}`;
                 if (sign) sign.style.display = 'none';
             } else {
                 svgBg.style.display = 'block';
