@@ -949,6 +949,19 @@
          * SUBSCRIPTION & GIFT LOGIC
          */
 
+                function getParachuteHTML(fillColor, transition) {
+            if (typeof CONFIG !== 'undefined' && CONFIG.PARACHUTE_IMAGE) {
+                return `<img class="parachute-svg" src="assets/${encodeURIComponent(CONFIG.PARACHUTE_IMAGE)}" style="position: absolute; top: -110px; left: -10px; width: 100px; height: 100px; ${transition ? 'transition: opacity 0.5s;' : ''}">`;
+            }
+            return `
+            <svg class="parachute-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="position: absolute; top: -110px; left: -10px; width: 100px; height: 100px; ${transition ? 'transition: opacity 0.5s;' : ''}">
+                <path d="M 10 50 Q 50 10 90 50 Z" fill="${fillColor}"/>
+                <line x1="20" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
+                <line x1="50" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
+                <line x1="80" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
+            </svg>`;
+        }
+
         function getTreatSVG() {
             return `
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -1193,12 +1206,7 @@
 
             duckWrap.innerHTML = `
                 <div class="duck-swim" style="animation: none !important;">
-                    <svg class="parachute-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="position: absolute; top: -80px; left: -10px; width: 100px; height: 100px;">
-                        <path d="M 10 50 Q 50 10 90 50 Z" fill="#E74C3C"/>
-                        <line x1="20" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
-                        <line x1="50" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
-                        <line x1="80" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
-                    </svg>
+                    ${getParachuteHTML('#E74C3C', false)}
                     <div class="duck-svg" style="transform: scaleX(1) !important;">
                         ${getDuckSVG(color)}
                     </div>
@@ -1244,12 +1252,7 @@
                 <div class="duck-swim">
                     <div class="action-container"></div>
                     <div class="bubble-container"></div>
-                    <svg class="parachute-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="position: absolute; top: -80px; left: -10px; width: 100px; height: 100px; transition: opacity 0.5s;">
-                        <path d="M 10 50 Q 50 10 90 50 Z" fill="#F1C40F"/>
-                        <line x1="20" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
-                        <line x1="50" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
-                        <line x1="80" y1="50" x2="50" y2="90" stroke="#333" stroke-width="2"/>
-                    </svg>
+                    ${getParachuteHTML('#F1C40F', true)}
                     <div class="duck-svg sparkle-effect">
                         ${getDuckImageHTML(username, finalColor)}
                     </div>
@@ -2660,7 +2663,7 @@
             if (testCounter > 10) testCounter = 1;
         }
 
-        function simulateRaid() {
+        window.simulateRaid = function simulateRaid() {
             // Close the modal to show the ducks
             if (setupModal.style.display !== 'none') {
                 setupModal.style.opacity = '0';
