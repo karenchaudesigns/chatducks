@@ -696,6 +696,10 @@
 
         const POND_BACKGROUND = (typeof CONFIG !== 'undefined' && CONFIG.POND_BACKGROUND) ? CONFIG.POND_BACKGROUND : null;
 
+        const ENABLE_STREAMER_BOT = (typeof CONFIG !== 'undefined' && CONFIG.ENABLE_STREAMER_BOT) ? CONFIG.ENABLE_STREAMER_BOT : false;
+        const STREAMER_BOT_WS_URL = (typeof CONFIG !== 'undefined' && CONFIG.STREAMER_BOT_WS_URL) ? CONFIG.STREAMER_BOT_WS_URL : 'ws://127.0.0.1:8080/';
+        const STREAMER_BOT_REWARD_ACTIONS = (typeof CONFIG !== 'undefined' && CONFIG.STREAMER_BOT_REWARD_ACTIONS) ? CONFIG.STREAMER_BOT_REWARD_ACTIONS : {};
+
         
         let client = null; // tmi.js client
         let broadcasterName = null; // Store the broadcaster's channel name
@@ -707,6 +711,58 @@
         let globalZIndex = 100;
 
         // Initialize pond background
+
+        function initStreamerBot() {
+            if (!ENABLE_STREAMER_BOT) return;
+
+            let ws = new WebSocket(STREAMER_BOT_WS_URL);
+
+            ws.onopen = function() {
+                console.log("Connected to Streamer.bot WebSocket");
+                // Subscribe to Twitch RewardRedemption events
+                ws.send(JSON.stringify({
+                    "request": "Subscribe",
+                    "events": {
+                        "Twitch": [
+                            "RewardRedemption"
+                        ]
+                    },
+                    "id": "DuckOverlaySubscription"
+                }));
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    let data = JSON.parse(event.data);
+                    if (data.event && data.event.source === 'Twitch' && data.event.type === 'RewardRedemption') {
+                        let rewardTitle = data.data.reward.title.toLowerCase();
+                        let username = data.data.user.displayName || data.data.user.name;
+
+                        // Find matching action
+                        for (const [key, command] of Object.entries(STREAMER_BOT_REWARD_ACTIONS)) {
+                            if (rewardTitle.includes(key.toLowerCase()) || rewardTitle === key.toLowerCase()) {
+                                console.log(`Streamer.bot Reward Triggered: ${command} by ${username}`);
+                                // Simulate as a mod command for permission bypass
+                                handleIncomingMessage(username, command, null, null, { mod: true });
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error parsing Streamer.bot WebSocket message:", e);
+                }
+            };
+
+            ws.onclose = function() {
+                console.log("Disconnected from Streamer.bot WebSocket. Retrying in 5s...");
+                setTimeout(initStreamerBot, 5000);
+            };
+
+            ws.onerror = function(err) {
+                console.error("Streamer.bot WebSocket error:", err);
+            };
+        }
+
         function initPondBackground() {
             const svgBg = document.getElementById('pond-bg');
             const imgBg = document.getElementById('pond-bg-img');
@@ -726,6 +782,7 @@
 
         // Call init right after declaration
         initPondBackground();
+        initStreamerBot();
 
         const pendingGifts = []; // [{ username, element, timer }]
         let lastRaidTime = 0;
