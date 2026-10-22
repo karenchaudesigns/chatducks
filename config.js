@@ -11,8 +11,7 @@ const CONFIG = {
         // Map reward names (exact, case-insensitive) to overlay commands
         // Example: "Pond Treats": "!treats",
         // Example: "Confetti Party": "!yay",
-        "duck treats": "!treats",
-        "scatter ducks": "!scatter",
-        "clear pond": "!shoo"
+        "Yay!": "!yay",
+        "Throw treats!": "!treats"
     }
 };
